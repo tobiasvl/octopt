@@ -1,5 +1,3 @@
-**This is a placeholder crate.**
-
 octopt
 ======
 
