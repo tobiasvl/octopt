@@ -8,7 +8,7 @@
 //!
 //! This library contains structs and enums that represent all possible CHIP-8 options, which you can use for your CHIP-8 emulator.
 
-mod color;
+pub mod color;
 use color::Color;
 use serde::de::{self, Deserializer, Unexpected};
 use serde::{Deserialize, Serialize, Serializer};
@@ -129,7 +129,7 @@ pub struct OctoQuirks {
         serialize_with = "int_from_bool",
         deserialize_with = "bool_from_int"
     )]
-    pub loadstore: bool,
+    pub load_store: bool,
     /// Decides the behavior of the CHIP-8 relative jump instruction BXNN (jump to address XNN,
     /// plus the value in a register):
     /// * False: The value in the V0 register is used for the offset (original behavior)
@@ -204,7 +204,7 @@ pub enum LoResDxy0Behavior {
     /// Draw a sprite with height 16 (DREAM 6800 behavior)
     TallSprite,
     /// Draw a 16x16 sprite, ie. the same behavior as in hires (high-resolution 128x64 SUPER-CHIP
-    /// XO-CHIP) mode
+    /// XO-CHIP) mode (Octo behavior)
     BigSprite,
 }
 
@@ -227,11 +227,11 @@ pub struct OctoOptions {
     /// * 20–30 (approximate speed of the SUPER-CHIP interpreters for the HP 48 calculators)
     /// * 10000 (Octo's "Ludicrous speed" setting)
     pub tickrate: u16,
-    /// The maximum memory, in bytes, that is available to the program. If the CHIP-8 program is
+    /// The maximum amount of virtual memory, in bytes, that is available to the program. If the CHIP-8 program is
     /// larger than this, the interpreter should give an error.
     ///
     /// At least 512 bytes are always reserved for the CHIP-8 interpreter and unavailable to the
-    /// CHIP-8 game; see the field `start_address`.
+    /// CHIP-8 game; see the field [`start_address`].
     ///
     /// This is mostly relevant when developing CHIP-8 games for real hardware, as an assertion
     /// that the game will fit in the target platform's memory. Most CHIP-8 interpreters can ignore
@@ -261,7 +261,9 @@ pub struct OctoOptions {
     /// * 1536 (interpreter for the ETI-660)
     pub start_address: u16,
 
-    /// Custom colors this game would like to use, if possible.
+    /// Custom colors this game would like to use, if possible. It's not important for a CHIP-8
+    /// interpreter to support custom colors although not doing so might impact the creator's
+    /// artistic vision, especially for XO-CHIP games that use more than two colors.
     #[serde(flatten)]
     pub colors: OctoColors,
 

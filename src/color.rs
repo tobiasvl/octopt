@@ -1,3 +1,5 @@
+//! An RGB color triplet struct that can be used with [`serde`](serde).
+
 use serde::de::{self, Deserializer, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
@@ -7,12 +9,25 @@ use std::str::FromStr;
 // TODO: Compare with this similar (but probably better) implementation:
 // https://docs.rs/twitchchat/0.6.3/src/twitchchat/twitch/color.rs.html
 
-/// An RGB color triplet struct that can be used with [`serde`](serde).
+/// An RGB color which can be serialized into and deserialized from a hexadecimal color string.
+///
+/// Example:
+/// ```
+/// use octopt::color::Color;
+/// use std::str::FromStr;
+///
+/// let red = Color { r: 255, g: 0, b: 0 };
+/// assert_eq!(format!("{}", red), "#FF0000");
+/// assert_eq!(Color::from_str("#FF0000").unwrap(), red);
+/// ```
 #[derive(Default, Debug, PartialEq)]
 pub struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
+    /// Red
+    pub r: u8,
+    /// Blue
+    pub g: u8,
+    /// Green
+    pub b: u8,
 }
 
 impl fmt::Display for Color {
