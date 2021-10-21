@@ -18,7 +18,7 @@ use std::str::FromStr;
 ///
 /// let red = Color { r: 255, g: 0, b: 0 };
 /// assert_eq!(format!("{}", red), "#FF0000");
-/// assert_eq!(Color::from_str("#FF0000").unwrap(), red);
+/// assert_eq!("#FF0000".parse::<Color>().unwrap(), red);
 /// ```
 #[derive(Default, Debug, PartialEq)]
 pub struct Color {

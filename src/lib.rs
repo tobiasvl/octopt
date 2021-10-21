@@ -17,41 +17,9 @@ use serde_repr::*;
 use std::fmt;
 use std::str::FromStr;
 use std::u8;
-
-/// Represents the different fonts a CHIP-8 interpreter can provide.
-/// TODO: Provide the actual fonts too.
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum OctoFont {
-    /// The font used by [Octo](https://github.com/JohnEarnest).
-    /// Contains small digits for 0–F, as well as big digits for 0–F.
-    Octo,
-    /// The font used by the original CHIP-8 interpreter on the COSMAC VIP.
-    /// Contains small digits for 0–F only.
-    Vip,
-    /// The font used by CHIP-8/CHIPOS on the DREAM 6800. Contains small
-    /// digits for 0–F only.
-    Dream6800,
-    /// The font used by the CHIP-8 interpreter on the ETI-660. Contains small
-    /// digits for 0–F only. Very similar to Dream6800.
-    Eti660,
-    /// The font used by SUPER-CHIP 1.1 on the HP 48. Contains small digits for
-    /// 0–F, and big digits for 0–9.
-    Schip,
-    /// Custom font used by the Fish'n'Chips CHIP-8 emulator. Contains small digits
-    /// for 0–F and big digits for 0–F.
-    Fish,
-}
-
-impl Default for OctoFont {
-    fn default() -> Self {
-        Self::Octo
-    }
-}
-
 /// If the CHIP-8 interpreter supports custom colors for visual elements, it can use these values
 /// for setting them.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OctoColors {
     /// The standard color used for active pixels on the CHIP-8 screen. For XO-CHIP, it's used for
@@ -69,8 +37,31 @@ pub struct OctoColors {
     pub quiet_color: Color,
 }
 
+/// The default colorscheme here is white on black, which is most common, with non-standard colors
+/// for the other elements, albeit inspried by Octo's "Hot Dog" preset.
+impl Default for OctoColors {
+    fn default() -> Self {
+        Self {
+            fill_color: Color {
+                r: 255,
+                g: 255,
+                b: 255,
+            },
+            fill_color2: Color {
+                r: 255,
+                g: 255,
+                b: 0,
+            },
+            blend_color: Color { r: 255, g: 0, b: 0 },
+            background_color: Color { r: 0, g: 0, b: 0 },
+            buzz_color: Color { r: 153, g: 0, b: 0 },
+            quiet_color: Color { r: 51, g: 0, b: 0 },
+        }
+    }
+}
+
 /// Represents the different touch modes support by [Octo](https://github.com/JohnEarnest/Octo).
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum OctoTouchMode {
     /// Do not attempt to handle touch input.
@@ -91,6 +82,12 @@ pub enum OctoTouchMode {
     Vip,
 }
 
+impl Default for OctoTouchMode {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
 /// Represents the different "quirks", ie. divergent behaviors, of the CHIP-8 runtime. These are
 /// the most important ones to support, as many games depend on specific settings here to run
 /// properly.
@@ -105,7 +102,7 @@ pub enum OctoTouchMode {
 /// Note also that Octo doesn't support all of these quirks. This struct should support all
 /// possible divergent behaviors between widely used CHIP-8 interpreters. A CHIP-8 interpreter
 /// should ignore any quirks they don't recognize, or don't have any intention of supporting.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OctoQuirks {
     /// Decides the behavior of the CHIP-8 shift instructions 8XY6 (right shift) and 8XYE (left shift):
@@ -194,9 +191,25 @@ pub struct OctoQuirks {
     pub lores_dxy0: LoResDxy0Behavior,
 }
 
+/// Returns a default where no quirks are enabled, except that the [`LoResDxy0Behavior`] assumed Octo behavior..
+impl Default for OctoQuirks {
+    fn default() -> Self {
+        Self {
+            shift: false,
+            load_store: false,
+            jump0: false,
+            logic: false,
+            clip: false,
+            vblank: false,
+            vf_order: false,
+            lores_dxy0: LoResDxy0Behavior::BigSprite,
+        }
+    }
+}
+
 /// Represents the different possible behaviors of attempting to draw a sprite with 0 height with
 /// the instruction DXY0 while in lores (low-resolution 64x32) mode.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LoResDxy0Behavior {
     /// No operation (original behavior)
@@ -208,14 +221,8 @@ pub enum LoResDxy0Behavior {
     BigSprite,
 }
 
-impl Default for OctoTouchMode {
-    fn default() -> Self {
-        Self::None
-    }
-}
-
 /// Representation of Octo options.
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OctoOptions {
     /// The number of CHIP-8 instructions executed per 60Hz frame, ie. the "speed" of the virtual
@@ -273,6 +280,22 @@ pub struct OctoOptions {
     pub quirks: OctoQuirks,
 }
 
+/// Returns a default where no quirks are enabled, except that the [`LoResDxy0Behavior`] assumed Octo behavior..
+impl Default for OctoOptions {
+    fn default() -> Self {
+        Self {
+            tickrate: 500,
+            max_size: 3584,
+            screen_rotation: ScreenRotation::default(),
+            font_style: OctoFont::default(),
+            touch_input_mode: OctoTouchMode::default(),
+            start_address: 512,
+            colors: OctoColors::default(),
+            quirks: OctoQuirks::default(),
+        }
+    }
+}
+
 /// Possible orientations of the display. Note that this should only affect the visual
 /// representation of the screen; draw operations still act as if the screen rotation is 0. Only
 /// used by some Octo games.
@@ -287,6 +310,12 @@ pub enum ScreenRotation {
     UpsideDown = 180,
     /// Portrait screen display, ie. a normal screen rotated 90 degrees counter-clockwise
     CounterClockWise = 270,
+}
+
+impl Default for ScreenRotation {
+    fn default() -> Self {
+        Self::Normal
+    }
 }
 
 /// Deserializes OctoOptions from a JSON string.
@@ -330,4 +359,230 @@ where
     S: Serializer,
 {
     serializer.serialize_u8(if *x { 1 } else { 0 })
+}
+
+/// Represents the different fonts a CHIP-8 interpreter can provide. The default is Octo's modern font,
+/// which contains all the digits in both sizes and is used by most modern games.
+///
+/// It's not likely that many (or any) historical CHIP-8 games depend on a particular font, but it's
+/// possible, and for that reason (and to make historical games look accurate) the font can be
+/// overriden here _and_ you can get the sprite data for the fonts by calling [`get_font_data`].
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum OctoFont {
+    /// The font used by [Octo](https://github.com/JohnEarnest). Its small digits are identical to
+    /// SUPER-CHIP's, but the big digits are a bigger version of the small ones, rather than
+    /// SUPER-CHIP's rounded big digits. Contains small digits for 0–F, as well as big digits for 0–F.
+    Octo,
+    /// The font used by the original CHIP-8 interpreter on the COSMAC VIP.
+    /// Contains small digits for 0–F only.
+    Vip,
+    /// The font used by CHIP-8/CHIPOS on the DREAM 6800. Contains small
+    /// digits for 0–F only.
+    Dream6800,
+    /// The font used by the CHIP-8 interpreter on the ETI-660. Contains small
+    /// digits for 0–F only. Very similar to Dream6800.
+    Eti660,
+    /// The font used by SUPER-CHIP 1.1 on the HP 48. Contains small digits for
+    /// 0–F, but only big digits for 0–9.
+    Schip,
+    /// Custom font used by the Fish'n'Chips CHIP-8 emulator. Contains small digits
+    /// for 0–F and big digits for 0–F.
+    Fish,
+}
+
+/// The default font is Octo's font, as it's the modern standard and contains all hexadecimal digits
+/// in both small and large variants.
+impl Default for OctoFont {
+    fn default() -> Self {
+        Self::Octo
+    }
+}
+
+/// Returns a tuple where the first element is an array of 16 sprites that are 5 bytes tall, where
+/// each one represents the sprite data for a hexadecimal digit in a CHIP-8 font, and the other
+/// optional element is a vector of sprites that are 10 bytes tall.
+///
+/// Not all fonts provide the larger sprites, as they became standard with SUPER-CHIP's high resolution mode.
+/// Furthermore, the SUPER-CHIP font set itself only provides large sprites for the decimal digits
+/// 0–9, not the hexadecimal A–F.
+///
+/// A modern CHIP-8 interpreter will put its font data (for one font) somewhere in the first 512 bytes of
+/// memory, which are reserved for the interpreter, but the actual memory location doesn't matter.
+/// It's common to put it at either address 0 or 80 (`0x50`).
+pub fn get_font_data(font: OctoFont) -> ([u8; 5 * 16], Option<Vec<u8>>) {
+    match font {
+        OctoFont::Octo => (
+            [
+                0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+                0x20, 0x60, 0x20, 0x20, 0x70, // 1
+                0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+                0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+                0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+                0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+                0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+                0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+                0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+                0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+                0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+                0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+                0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+                0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+                0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+                0xF0, 0x80, 0xF0, 0x80, 0x80, // F
+            ],
+            Some(vec![
+                0xFF, 0xFF, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF, // 0
+                0x18, 0x78, 0x78, 0x18, 0x18, 0x18, 0x18, 0x18, 0xFF, 0xFF, // 1
+                0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, // 2
+                0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, // 3
+                0xC3, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF, 0x03, 0x03, 0x03, 0x03, // 4
+                0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, // 5
+                0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC3, 0xC3, 0xFF, 0xFF, // 6
+                0xFF, 0xFF, 0x03, 0x03, 0x06, 0x0C, 0x18, 0x18, 0x18, 0x18, // 7
+                0xFF, 0xFF, 0xC3, 0xC3, 0xFF, 0xFF, 0xC3, 0xC3, 0xFF, 0xFF, // 8
+                0xFF, 0xFF, 0xC3, 0xC3, 0xFF, 0xFF, 0x03, 0x03, 0xFF, 0xFF, // 9
+                0x7E, 0xFF, 0xC3, 0xC3, 0xC3, 0xFF, 0xFF, 0xC3, 0xC3, 0xC3, // A
+                0xFC, 0xFC, 0xC3, 0xC3, 0xFC, 0xFC, 0xC3, 0xC3, 0xFC, 0xFC, // B
+                0x3C, 0xFF, 0xC3, 0xC0, 0xC0, 0xC0, 0xC0, 0xC3, 0xFF, 0x3C, // C
+                0xFC, 0xFE, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xC3, 0xFE, 0xFC, // D
+                0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, // E
+                0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xC0, 0xC0, // F
+            ]),
+        ),
+        OctoFont::Vip => (
+            [
+                0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+                0x60, 0x20, 0x20, 0x20, 0x70, // 1
+                0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+                0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+                0xA0, 0xA0, 0xF0, 0x20, 0x20, // 4
+                0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+                0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+                0xF0, 0x10, 0x10, 0x10, 0x10, // 7
+                0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+                0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+                0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+                0xF0, 0x50, 0x70, 0x50, 0xF0, // B
+                0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+                0xF0, 0x50, 0x50, 0x50, 0xF0, // D
+                0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+                0xF0, 0x80, 0xF0, 0x80, 0x80, // F
+            ],
+            None,
+        ),
+        OctoFont::Dream6800 => (
+            [
+                0xE0, 0xA0, 0xA0, 0xA0, 0xE0, // 0
+                0x40, 0x40, 0x40, 0x40, 0x40, // 1
+                0xE0, 0x20, 0xE0, 0x80, 0xE0, // 2
+                0xE0, 0x20, 0xE0, 0x20, 0xE0, // 3
+                0x80, 0xA0, 0xA0, 0xE0, 0x20, // 4
+                0xE0, 0x80, 0xE0, 0x20, 0xE0, // 5
+                0xE0, 0x80, 0xE0, 0xA0, 0xE0, // 6
+                0xE0, 0x20, 0x20, 0x20, 0x20, // 7
+                0xE0, 0xA0, 0xE0, 0xA0, 0xE0, // 8
+                0xE0, 0xA0, 0xE0, 0x20, 0xE0, // 9
+                0xE0, 0xA0, 0xE0, 0xA0, 0xA0, // A
+                0xC0, 0xA0, 0xE0, 0xA0, 0xC0, // B
+                0xE0, 0x80, 0x80, 0x80, 0xE0, // C
+                0xC0, 0xA0, 0xA0, 0xA0, 0xC0, // D
+                0xE0, 0x80, 0xE0, 0x80, 0xE0, // E
+                0xE0, 0x80, 0xC0, 0x80, 0x80, // F
+            ],
+            None,
+        ),
+        OctoFont::Eti660 => (
+            [
+                0xE0, 0xA0, 0xA0, 0xA0, 0xE0, // 0
+                0x20, 0x20, 0x20, 0x20, 0x20, // 1
+                0xE0, 0x20, 0xE0, 0x80, 0xE0, // 2
+                0xE0, 0x20, 0xE0, 0x20, 0xE0, // 3
+                0xA0, 0xA0, 0xE0, 0x20, 0x20, // 4
+                0xE0, 0x80, 0xE0, 0x20, 0xE0, // 5
+                0xE0, 0x80, 0xE0, 0xA0, 0xE0, // 6
+                0xE0, 0x20, 0x20, 0x20, 0x20, // 7
+                0xE0, 0xA0, 0xE0, 0xA0, 0xE0, // 8
+                0xE0, 0xA0, 0xE0, 0x20, 0xE0, // 9
+                0xE0, 0xA0, 0xE0, 0xA0, 0xA0, // A
+                0x80, 0x80, 0xE0, 0xA0, 0xE0, // B
+                0xE0, 0x80, 0x80, 0x80, 0xE0, // C
+                0x20, 0x20, 0xE0, 0xA0, 0xE0, // D
+                0xE0, 0x80, 0xE0, 0x80, 0xE0, // E
+                0xE0, 0x80, 0xC0, 0x80, 0x80, // F
+            ],
+            None,
+        ),
+        OctoFont::Schip => (
+            [
+                0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+                0x20, 0x60, 0x20, 0x20, 0x70, // 1
+                0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+                0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+                0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+                0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+                0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+                0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+                0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+                0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+                0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+                0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+                0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+                0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+                0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+                0xF0, 0x80, 0xF0, 0x80, 0x80, // F
+            ],
+            Some(vec![
+                0x3C, 0x7E, 0xE7, 0xC3, 0xC3, 0xC3, 0xC3, 0xE7, 0x7E, 0x3C, // 0
+                0x18, 0x38, 0x58, 0x18, 0x18, 0x18, 0x18, 0x18, 0x18, 0x3C, // 1
+                0x3E, 0x7F, 0xC3, 0x06, 0x0C, 0x18, 0x30, 0x60, 0xFF, 0xFF, // 2
+                0x3C, 0x7E, 0xC3, 0x03, 0x0E, 0x0E, 0x03, 0xC3, 0x7E, 0x3C, // 3
+                0x06, 0x0E, 0x1E, 0x36, 0x66, 0xC6, 0xFF, 0xFF, 0x06, 0x06, // 4
+                0xFF, 0xFF, 0xC0, 0xC0, 0xFC, 0xFE, 0x03, 0xC3, 0x7E, 0x3C, // 5
+                0x3E, 0x7C, 0xE0, 0xC0, 0xFC, 0xFE, 0xC3, 0xC3, 0x7E, 0x3C, // 6
+                0xFF, 0xFF, 0x03, 0x06, 0x0C, 0x18, 0x30, 0x60, 0x60, 0x60, // 7
+                0x3C, 0x7E, 0xC3, 0xC3, 0x7E, 0x7E, 0xC3, 0xC3, 0x7E, 0x3C, // 8
+                0x3C, 0x7E, 0xC3, 0xC3, 0x7F, 0x3F, 0x03, 0x03, 0x3E, 0x7C, // 9
+            ]),
+        ),
+        OctoFont::Fish => (
+            [
+                0x60, 0xA0, 0xA0, 0xA0, 0xC0, // 0
+                0x40, 0xC0, 0x40, 0x40, 0xE0, // 1
+                0xC0, 0x20, 0x40, 0x80, 0xE0, // 2
+                0xC0, 0x20, 0x40, 0x20, 0xC0, // 3
+                0x20, 0xA0, 0xE0, 0x20, 0x20, // 4
+                0xE0, 0x80, 0xC0, 0x20, 0xC0, // 5
+                0x40, 0x80, 0xC0, 0xA0, 0x40, // 6
+                0xE0, 0x20, 0x60, 0x40, 0x40, // 7
+                0x40, 0xA0, 0x40, 0xA0, 0x40, // 8
+                0x40, 0xA0, 0x60, 0x20, 0x40, // 9
+                0x40, 0xA0, 0xE0, 0xA0, 0xA0, // A
+                0xC0, 0xA0, 0xC0, 0xA0, 0xC0, // B
+                0x60, 0x80, 0x80, 0x80, 0x60, // C
+                0xC0, 0xA0, 0xA0, 0xA0, 0xC0, // D
+                0xE0, 0x80, 0xC0, 0x80, 0xE0, // E
+                0xE0, 0x80, 0xC0, 0x80, 0x80, // F
+            ],
+            Some(vec![
+                // Note: 7x9 pixels
+                0x7C, 0xC6, 0xCE, 0xDE, 0xD6, 0xF6, 0xE6, 0xC6, 0x7C, 0x00, // 0
+                0x10, 0x30, 0xF0, 0x30, 0x30, 0x30, 0x30, 0x30, 0xFC, 0x00, // 1
+                0x78, 0xCC, 0xCC, 0x0C, 0x18, 0x30, 0x60, 0xCC, 0xFC, 0x00, // 2
+                0x78, 0xCC, 0x0C, 0x0C, 0x38, 0x0C, 0x0C, 0xCC, 0x78, 0x00, // 3
+                0x0C, 0x1C, 0x3C, 0x6C, 0xCC, 0xFE, 0x0C, 0x0C, 0x1E, 0x00, // 4
+                0xFC, 0xC0, 0xC0, 0xC0, 0xF8, 0x0C, 0x0C, 0xCC, 0x78, 0x00, // 5
+                0x38, 0x60, 0xC0, 0xC0, 0xF8, 0xCC, 0xCC, 0xCC, 0x78, 0x00, // 6
+                0xFE, 0xC6, 0xC6, 0x06, 0x0C, 0x18, 0x30, 0x30, 0x30, 0x00, // 7
+                0x78, 0xCC, 0xCC, 0xEC, 0x78, 0xDC, 0xCC, 0xCC, 0x78, 0x00, // 8
+                0x7C, 0xC6, 0xC6, 0xC6, 0x7C, 0x18, 0x18, 0x30, 0x70, 0x00, // 9
+                0x30, 0x78, 0xCC, 0xCC, 0xCC, 0xFC, 0xCC, 0xCC, 0xCC, 0x00, // A
+                0xFC, 0x66, 0x66, 0x66, 0x7C, 0x66, 0x66, 0x66, 0xFC, 0x00, // B
+                0x3C, 0x66, 0xC6, 0xC0, 0xC0, 0xC0, 0xC6, 0x66, 0x3C, 0x00, // C
+                0xF8, 0x6C, 0x66, 0x66, 0x66, 0x66, 0x66, 0x6C, 0xF8, 0x00, // D
+                0xFE, 0x62, 0x60, 0x64, 0x7C, 0x64, 0x60, 0x62, 0xFE, 0x00, // E
+                0xFE, 0x66, 0x62, 0x64, 0x7C, 0x64, 0x60, 0x60, 0xF0, 0x00, // F
+            ]),
+        ),
+    }
 }
