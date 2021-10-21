@@ -56,17 +56,17 @@ impl Default for OctoFont {
 pub struct OctoColors {
     /// The standard color used for active pixels on the CHIP-8 screen. For XO-CHIP, it's used for
     /// the first drawing plane.
-    fill_color: Color,
+    pub fill_color: Color,
     /// XO-CHIP only: The color used for the second drawing plane.
-    fill_color2: Color,
+    pub fill_color2: Color,
     /// XO-CHIP only: The color used for when both drawing planes overlap.
-    blend_color: Color,
+    pub blend_color: Color,
     /// The standard background color of the CHIP-8 screen.
-    background_color: Color,
+    pub background_color: Color,
     /// The color used by any visual indicator for when the sound buzzer is active.
-    buzz_color: Color,
+    pub buzz_color: Color,
     /// The color used by any visual indicator for when the sound buzzer is inactive.
-    quiet_color: Color,
+    pub quiet_color: Color,
 }
 
 /// Represents the different touch modes support by [Octo](https://github.com/JohnEarnest/Octo).
@@ -118,7 +118,7 @@ pub struct OctoQuirks {
         serialize_with = "int_from_bool",
         deserialize_with = "bool_from_int"
     )]
-    shift: bool,
+    pub shift: bool,
     /// Decides the behavior of the CHIP-8 serialization FX55 (dump registers V0–VX to memory
     /// location I) and FX65 (load registers V0–VX from memory location I):
     /// * False: The value in the I register is incremented for each register loaded/stored.
@@ -129,7 +129,7 @@ pub struct OctoQuirks {
         serialize_with = "int_from_bool",
         deserialize_with = "bool_from_int"
     )]
-    loadstore: bool,
+    pub loadstore: bool,
     /// Decides the behavior of the CHIP-8 relative jump instruction BXNN (jump to address XNN,
     /// plus the value in a register):
     /// * False: The value in the V0 register is used for the offset (original behavior)
@@ -140,7 +140,7 @@ pub struct OctoQuirks {
         serialize_with = "int_from_bool",
         deserialize_with = "bool_from_int"
     )]
-    jump0: bool,
+    pub jump0: bool,
     /// Decides the value of the VF flag register after logical instructions 8XY1 (logical OR),
     /// 8XY2 (logical AND) and 8XY3 (logical XOR):
     /// * False: The VF flag register is unchanged by logical instructions (Octo, CHIP48 and
@@ -152,7 +152,7 @@ pub struct OctoQuirks {
         serialize_with = "int_from_bool",
         deserialize_with = "bool_from_int"
     )]
-    logic: bool,
+    pub logic: bool,
     /// Decides the behavior of sprites drawn out of bounds:
     /// * False: Sprites wrap on screen edges (Octo behavior)
     /// * True: Sprites are clipped on screen edges (original, CHIP-48 and SUPER-CHIP behavior)
@@ -161,7 +161,7 @@ pub struct OctoQuirks {
         serialize_with = "int_from_bool",
         deserialize_with = "bool_from_int"
     )]
-    clip: bool,
+    pub clip: bool,
     /// Decides whether the CHIP-8 interpreter should wait for the rest of the current frame after
     /// each drawing operation:
     /// * False: No special behavior (CHIP-48, SUPER-CHIP and Octo behavior)
@@ -172,7 +172,7 @@ pub struct OctoQuirks {
         serialize_with = "int_from_bool",
         deserialize_with = "bool_from_int"
     )]
-    vblank: bool,
+    pub vblank: bool,
     /// Decides whether arithmetic or logical instructions that have the VF register as one of the
     /// operands should set the resulting flag in the VF flag register before or after the value:
     /// * False: The resulting flags are discarded, and the result is placed in the VF register
@@ -183,7 +183,7 @@ pub struct OctoQuirks {
         serialize_with = "int_from_bool",
         deserialize_with = "bool_from_int"
     )]
-    vforder: bool,
+    pub vf_order: bool,
     /// Decides what the behavior of the draw instruction should be if the given sprite height is 0
     /// (DXY0) and the interpreter is in lores (low-resolution 64x32 CHIP-8) mode:
     /// * NoOp: No operation (original behavior)
@@ -191,14 +191,14 @@ pub struct OctoQuirks {
     /// * BigSprite: Draw a 16x16 pixel sprite, ie. the same behavior as in hires (high-resolution
     /// 128x64 SUPER-CHIP/XO-CHIP) mode (Octo behavior)
     #[serde(rename = "loresDXY0Quirks")]
-    lores_dxy0: LoResDxy0Behavior,
+    pub lores_dxy0: LoResDxy0Behavior,
 }
 
 /// Represents the different possible behaviors of attempting to draw a sprite with 0 height with
 /// the instruction DXY0 while in lores (low-resolution 64x32) mode.
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-enum LoResDxy0Behavior {
+pub enum LoResDxy0Behavior {
     /// No operation (original behavior)
     NoOp,
     /// Draw a sprite with height 16 (DREAM 6800 behavior)
@@ -226,7 +226,7 @@ pub struct OctoOptions {
     /// * 7–15 (approximate speed of the original interpreter for the COSMAC VIP)
     /// * 20–30 (approximate speed of the SUPER-CHIP interpreters for the HP 48 calculators)
     /// * 10000 (Octo's "Ludicrous speed" setting)
-    tickrate: u16,
+    pub tickrate: u16,
     /// The maximum memory, in bytes, that is available to the program. If the CHIP-8 program is
     /// larger than this, the interpreter should give an error.
     ///
@@ -245,19 +245,30 @@ pub struct OctoOptions {
     ///
     /// Other values might be used for games for more obscure platforms, games that were designed
     /// to run on a COSMAC VIP with only 2K RAM, etc.
-    max_size: u16, // {3216, 3583, 3584, 65024}
+    pub max_size: u16, // {3216, 3583, 3584, 65024}
     /// The orientation of the display.
-    screen_rotation: ScreenRotation,
+    pub screen_rotation: ScreenRotation,
     /// The font style expected by the game.
-    font_style: OctoFont, // OCTO_FONT_...
-    touch_input_mode: OctoTouchMode, // OCTO_TOUCH_...
-    start_address: u16,
+    pub font_style: OctoFont, // OCTO_FONT_...
+    /// The touch controls this game supports.
+    pub touch_input_mode: OctoTouchMode, // OCTO_TOUCH_...
+    /// The memory address in the virtual RAM that this game should be loaded from. On legacy
+    /// hardware, the interpreter itself was loaded into the lower memory addresses, and then the
+    /// game was loaded after it (usually at address `0x200`, ie. 512).
+    ///
+    /// Common values:
+    /// * 512 (original interpreter for the COSMAC VIP, DREAM 6800, HP 48, etc)
+    /// * 1536 (interpreter for the ETI-660)
+    pub start_address: u16,
 
+    /// Custom colors this game would like to use, if possible.
     #[serde(flatten)]
-    colors: OctoColors,
+    pub colors: OctoColors,
 
+    /// Specific behaviors this game expects from the interpreter in order to run properly. See
+    /// [`OctoQuirks`] for specifics.
     #[serde(flatten)]
-    quirks: OctoQuirks,
+    pub quirks: OctoQuirks,
 }
 
 /// Possible orientations of the display. Note that this should only affect the visual
