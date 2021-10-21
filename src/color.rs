@@ -7,7 +7,7 @@ use std::str::FromStr;
 // TODO: Compare with this similar (but probably better) implementation:
 // https://docs.rs/twitchchat/0.6.3/src/twitchchat/twitch/color.rs.html
 
-/// An RGB color triplet struct that can be used with [`serde_json`](serde_json).
+/// An RGB color triplet struct that can be used with [`serde`](serde).
 #[derive(Default, Debug, PartialEq)]
 pub struct Color {
     r: u8,
