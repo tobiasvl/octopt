@@ -189,9 +189,80 @@ pub struct OctoQuirks {
     /// 128x64 SUPER-CHIP/XO-CHIP) mode (Octo behavior)
     #[serde(rename = "loresDXY0Quirks")]
     pub lores_dxy0: LoResDxy0Behavior,
+    /// Decides whether the screen should be cleared when there is a resolution change (00FE and
+    /// 00FF). Note that if this is true, then the screen should retain the current image when
+    /// going from lores (low resolution) to hires (high resolution), which implies that the
+    /// existing image on the screen should be scaled up 2x.
+    /// * True: The screen is cleared if the resolution is changed (Octo behavior)
+    /// * False: The screen retains its image if the resolution is changed (original SUPER-CHIP
+    /// behavior)
+    #[serde(
+        rename = "resClearQuirks",
+        serialize_with = "int_from_bool",
+        deserialize_with = "bool_from_int"
+    )]
+    pub res_clear: bool,
+    /// Decides whether the delay timer should wrap around when it has counted down to 0 or not:
+    /// * True: The delay timer never stops, but overflows from 0 to 255 and keeps counting (DREAM
+    /// 6800 behavior)
+    /// * False: The delay timer counts down to 0, and then stops (original behavior)
+    #[serde(
+        rename = "delayWrapQuirks",
+        serialize_with = "int_from_bool",
+        deserialize_with = "bool_from_int"
+    )]
+    pub delay_wrap: bool,
+    /// Decides the result in the VF flag register when there's a collision of sprites in hires
+    /// (high resolution) mode:
+    /// * True: VF is set to the number of sprite pixel ros that detected a collision (SUPER-CHIP
+    /// 1.1 behavior, hires mode only)
+    /// * False: VF is always set to 1 if there is a collision (original behavior)
+    #[serde(
+        rename = "hiresCollisionQuirks",
+        serialize_with = "int_from_bool",
+        deserialize_with = "bool_from_int"
+    )]
+    pub hires_collision: bool,
+    /// Decides whether sprites clipping at the bottom of the screen should cound as a collision.
+    /// Note that this was probably a bug in the SUPER-CHIP 1.1 interpreter, and might not be
+    /// required by any games. Also, this doesn't make much sense if `clip_quirks` is false.
+    /// * True: VF is set if a sprite runs off the bottom of the screen (SUPER-CHIP 1.1 behavior)
+    /// * False: VF is unchanged if a sprite runs off the bottom of the screen (original behavior)
+    #[serde(
+        rename = "clipCollisionQuirks",
+        serialize_with = "int_from_bool",
+        deserialize_with = "bool_from_int"
+    )]
+    pub clip_collision: bool,
+    /// Decides whether scrolling in lores (low-resolution) mode scrolls by half the number of
+    /// pixels as in the high resolution mode. This occured in SUPER-CHIP because the low
+    /// resolution display was scaled up 2x; see also the `res_clear` quirk.
+    /// * True: In low resolution mode, scrolling left and right will scroll by 2 pixels rather
+    /// than 4 (as in high resolution), and scrolling down (and up, with the XO-CHIP instruction)
+    /// will scroll by half a pixel, since pixels are scaled upx) (SUPER-CHIP behavior)
+    /// * False: Scrolling acts the same in high and low resolution mode (Octo behavior)
+    #[serde(
+        rename = "scrollQuirks",
+        serialize_with = "int_from_bool",
+        deserialize_with = "bool_from_int"
+    )]
+    pub scroll: bool,
+    /// Decides whether the I address register should set the VF flag register if it "overflows"
+    /// from `0x0FFF` to above `0x1000`. Only one known game, _Spacefight! 2091_, relies on this
+    /// quirk, which was only present in the obscure CHIP-8 interpreter for the Amiga, while at
+    /// least one game (_Animal Race_) relies on the standard behavior.
+    /// * True: VF is set to 1 if the I register takes a value larger than `0x0FFF` (Amiga
+    /// behavior)
+    /// * False: VF is not affected by the I register (original behavior)
+    #[serde(
+        rename = "overflowIQuirks",
+        serialize_with = "int_from_bool",
+        deserialize_with = "bool_from_int"
+    )]
+    pub overflow_i: bool,
 }
 
-/// Returns a default where no quirks are enabled, except that the [`LoResDxy0Behavior`] assumed Octo behavior..
+/// Returns a default where no quirks are enabled, except the ones Octo observe.
 impl Default for OctoQuirks {
     fn default() -> Self {
         Self {
@@ -203,6 +274,12 @@ impl Default for OctoQuirks {
             vblank: false,
             vf_order: false,
             lores_dxy0: LoResDxy0Behavior::BigSprite,
+            res_clear: true,
+            delay_wrap: false,
+            hires_collision: false,
+            clip_collision: false,
+            scroll: false,
+            overflow_i: false,
         }
     }
 }
