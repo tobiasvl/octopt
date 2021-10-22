@@ -11,7 +11,7 @@
 pub mod color;
 use color::Color;
 use serde::de::{self, Deserializer, Unexpected};
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 use serde_repr::*;
 use serde_with::skip_serializing_none;
 use std::fmt;
@@ -350,7 +350,7 @@ pub struct OctoOptions {
     /// larger than this, the interpreter should give an error.
     ///
     /// At least 512 bytes are always reserved for the CHIP-8 interpreter and unavailable to the
-    /// CHIP-8 game; see the field [`start_address`].
+    /// CHIP-8 game; see the field `start_address`.
     ///
     /// This is mostly relevant when developing CHIP-8 games for real hardware, as an assertion
     /// that the game will fit in the target platform's memory. Most CHIP-8 interpreters can ignore
@@ -364,10 +364,6 @@ pub struct OctoOptions {
     ///
     /// Other values might be used for games for more obscure platforms, games that were designed
     /// to run on a COSMAC VIP with only 2K RAM, etc.
-    //#[serde(
-    //    default = "default_start_address",
-    //    skip_serializing_if = "is_default_start_address"
-    //)]
     #[serde(default, deserialize_with = "some_u16_from_int_or_str")]
     pub max_size: Option<u16>, // {3216, 3583, 3584, 65024}
     /// The orientation of the display.
@@ -386,10 +382,6 @@ pub struct OctoOptions {
     /// Common values:
     /// * 512 (original interpreter for the COSMAC VIP, DREAM 6800, HP 48, etc)
     /// * 1536 (interpreter for the ETI-660)
-    //#[serde(
-    //    default = "default_start_address",
-    //    skip_serializing_if = "is_default_start_address"
-    //)]
     #[serde(default, deserialize_with = "some_u16_from_int_or_str")]
     pub start_address: Option<u16>,
 
@@ -421,14 +413,6 @@ impl Default for OctoOptions {
     }
 }
 
-fn default_start_address() -> u16 {
-    512
-}
-
-fn is_default_start_address(address: &u16) -> bool {
-    *address == 512
-}
-
 /// Possible orientations of the display. Note that this should only affect the visual
 /// representation of the screen; draw operations still act as if the screen rotation is 0. Only
 /// used by some Octo games.
@@ -457,7 +441,7 @@ impl Default for ScreenRotation {
 impl FromStr for OctoOptions {
     type Err = serde_json::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(serde_json::from_str(s)?)
+        serde_json::from_str(s)
     }
 }
 
@@ -488,7 +472,7 @@ where
         //U16OrStr::Str(v) => v.parse().unwrap_or(None), //match v.parse() {
         U16OrStr::Str(v) => match v.parse() {
             Ok(v) => Some(v),
-            Err(other) => None,
+            Err(_) => None,
         },
         U16OrStr::U16(v) => Some(v),
     })

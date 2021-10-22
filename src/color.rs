@@ -1,13 +1,14 @@
-//! An RGB color triplet struct that can be used with [`serde`](serde).
+//! An RGB color triplet struct that can be used with [`serde`].
+//!
+//! Currently just an ugly, hacky wrapper around the crate [`css_color_parser2`] to make it support
+//! hexadecimal strings with or without a leading # as well as CSS color names, but as an RGB
+//! struct rather than an RGBA struct.
 
+use css_color_parser2::{Color as CssColor, ColorParseError};
 use serde::de::{self, Deserializer, Visitor};
 use serde::{Deserialize, Serialize, Serializer};
 use std::fmt;
 use std::str::FromStr;
-// This is kind of silly, and probably far from perfect, but it was a nice exercise and I made it
-// from scratch (just looking at serde docs).
-// TODO: Compare with this similar (but probably better) implementation:
-// https://docs.rs/twitchchat/0.6.3/src/twitchchat/twitch/color.rs.html
 
 /// An RGB color which can be serialized into and deserialized from a hexadecimal color string.
 ///
@@ -75,26 +76,17 @@ impl<'de> Deserialize<'de> for Color {
 }
 
 impl FromStr for Color {
-    type Err = std::num::ParseIntError;
+    type Err = ColorParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut v = vec![];
-        let mut cur = if let Some(s) = s.strip_prefix('#') {
-            s
-        } else {
-            &s
-        };
-        while !cur.is_empty() {
-            let (chunk, rest) = cur.split_at(std::cmp::min(2, cur.len()));
-            v.push(chunk);
-            cur = rest;
-        }
-
-        let rgb = Color {
-            r: u8::from_str_radix(v[0], 16)?,
-            g: u8::from_str_radix(v[1], 16)?,
-            b: u8::from_str_radix(v[2], 16)?,
+        let css_color = match CssColor::from_str(s) {
+            Ok(css_color) => css_color,
+            Err(_) => CssColor::from_str(&format!("#{}", s))?,
         };
 
-        Ok(rgb)
+        Ok(Color {
+            r: css_color.r,
+            g: css_color.g,
+            b: css_color.b,
+        })
     }
 }

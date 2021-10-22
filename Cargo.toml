@@ -1,6 +1,6 @@
 [package]
 name = "octopt"
-version = "0.0.7"
+version = "0.0.9"
 edition = "2021"
 license = "MIT"
 description = "CHIP-8/Octo configuration options"
@@ -13,6 +13,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_with = { version = "1.11", features = ["json"] }
 serde_json = "1.0"
 serde_repr = "0.1"
+css-color-parser2 = "1"
 
 [dev-dependencies]
 assert-json-diff = "2"
