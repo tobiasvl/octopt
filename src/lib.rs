@@ -13,28 +13,30 @@ use color::Color;
 use serde::de::{self, Deserializer, Unexpected};
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::*;
-
+use serde_with::skip_serializing_none;
 use std::fmt;
 use std::str::FromStr;
 use std::u8;
+
 /// If the CHIP-8 interpreter supports custom colors for visual elements, it can use these values
 /// for setting them.
+#[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OctoColors {
     /// The standard color used for active pixels on the CHIP-8 screen. For XO-CHIP, it's used for
     /// the first drawing plane.
-    pub fill_color: Color,
+    pub fill_color: Option<Color>,
     /// XO-CHIP only: The color used for the second drawing plane.
-    pub fill_color2: Color,
+    pub fill_color2: Option<Color>,
     /// XO-CHIP only: The color used for when both drawing planes overlap.
-    pub blend_color: Color,
+    pub blend_color: Option<Color>,
     /// The standard background color of the CHIP-8 screen.
-    pub background_color: Color,
+    pub background_color: Option<Color>,
     /// The color used by any visual indicator for when the sound buzzer is active.
-    pub buzz_color: Color,
+    pub buzz_color: Option<Color>,
     /// The color used by any visual indicator for when the sound buzzer is inactive.
-    pub quiet_color: Color,
+    pub quiet_color: Option<Color>,
 }
 
 /// The default colorscheme here is white on black, which is most common, with non-standard colors
@@ -42,20 +44,20 @@ pub struct OctoColors {
 impl Default for OctoColors {
     fn default() -> Self {
         Self {
-            fill_color: Color {
+            fill_color: Some(Color {
                 r: 255,
                 g: 255,
                 b: 255,
-            },
-            fill_color2: Color {
+            }),
+            fill_color2: Some(Color {
                 r: 255,
                 g: 255,
                 b: 0,
-            },
-            blend_color: Color { r: 255, g: 0, b: 0 },
-            background_color: Color { r: 0, g: 0, b: 0 },
-            buzz_color: Color { r: 153, g: 0, b: 0 },
-            quiet_color: Color { r: 51, g: 0, b: 0 },
+            }),
+            blend_color: Some(Color { r: 255, g: 0, b: 0 }),
+            background_color: Some(Color { r: 0, g: 0, b: 0 }),
+            buzz_color: Some(Color { r: 153, g: 0, b: 0 }),
+            quiet_color: Some(Color { r: 51, g: 0, b: 0 }),
         }
     }
 }
@@ -95,13 +97,25 @@ impl Default for OctoTouchMode {
 /// In the following, "original behavior" refers to how the original CHIP-8 interpreter on the
 /// COSMAC VIP operated.
 ///
-/// Note that whether a specific behavior is considered "quirky" or "default" or not
-/// doesn't necessarily mean that's the original behavior; in many cases, the original behavior is
-/// considered "quirky" and requires a `true` value to enable. This is for historical reasons.
+/// All these quirks are [`Option`]s, because they can be considered to be ternary values. A `Some(true)`
+/// value means that the interpreter should use the "quirky" behavior in a particular scenario. A
+/// `Some(false)` value means that it should use the "default" behavior. However, a `None` value
+/// means that this quirk setting was absent from the metadata, so we don't know what the game
+/// requires. This also implies that the interpreter should use some default behavior. This could be
+/// either because the game's creator wasn't aware of that particular quirk, or that the program that
+/// exported the metadata (usually Octo) wasn't aware of it (probably because it uses the default
+/// behavior for that quirk, without any option of configuring it). This is fine, because some of the
+/// quirks are obscure, but we still use `Option` in these cases so we don't serialize these quirk
+/// settings as `false` when we don't know that the game requires the quirk to be disabled.
+///
+/// Note that whether a specific behavior is considered "quirky"/"default" or not doesn't necessarily
+/// mean that's the original behavior; in many cases, the original behavior is considered "quirky"
+/// and requires a `true` value to enable. This is for historical reasons.
 ///
 /// Note also that Octo doesn't support all of these quirks. This struct should support all
 /// possible divergent behaviors between widely used CHIP-8 interpreters. A CHIP-8 interpreter
 /// should ignore any quirks they don't recognize, or don't have any intention of supporting.
+#[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OctoQuirks {
@@ -112,10 +126,11 @@ pub struct OctoQuirks {
     /// SUPER-CHIP behavior)
     #[serde(
         rename = "shiftQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub shift: bool,
+    pub shift: Option<bool>,
     /// Decides the behavior of the CHIP-8 serialization FX55 (dump registers V0–VX to memory
     /// location I) and FX65 (load registers V0–VX from memory location I):
     /// * False: The value in the I register is incremented for each register loaded/stored.
@@ -123,10 +138,11 @@ pub struct OctoQuirks {
     /// * True: The I register is left unchanged after the operation. (SUPER-CHIP behavior)
     #[serde(
         rename = "loadStoreQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub load_store: bool,
+    pub load_store: Option<bool>,
     /// Decides the behavior of the CHIP-8 relative jump instruction BXNN (jump to address XNN,
     /// plus the value in a register):
     /// * False: The value in the V0 register is used for the offset (original behavior)
@@ -134,10 +150,11 @@ pub struct OctoQuirks {
     /// address XNN (CHIP48 and SUPER-CHIP behavior)
     #[serde(
         rename = "jumpQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub jump0: bool,
+    pub jump0: Option<bool>,
     /// Decides the value of the VF flag register after logical instructions 8XY1 (logical OR),
     /// 8XY2 (logical AND) and 8XY3 (logical XOR):
     /// * False: The VF flag register is unchanged by logical instructions (Octo, CHIP48 and
@@ -146,19 +163,21 @@ pub struct OctoQuirks {
     /// behavior)
     #[serde(
         rename = "logicQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub logic: bool,
+    pub logic: Option<bool>,
     /// Decides the behavior of sprites drawn out of bounds:
     /// * False: Sprites wrap on screen edges (Octo behavior)
     /// * True: Sprites are clipped on screen edges (original, CHIP-48 and SUPER-CHIP behavior)
     #[serde(
         rename = "clipQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub clip: bool,
+    pub clip: Option<bool>,
     /// Decides whether the CHIP-8 interpreter should wait for the rest of the current frame after
     /// each drawing operation:
     /// * False: No special behavior (CHIP-48, SUPER-CHIP and Octo behavior)
@@ -166,10 +185,11 @@ pub struct OctoQuirks {
     /// it waits for a "VBlank interrupt" (original behavior)
     #[serde(
         rename = "vBlankQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub vblank: bool,
+    pub vblank: Option<bool>,
     /// Decides whether arithmetic or logical instructions that have the VF register as one of the
     /// operands should set the resulting flag in the VF flag register before or after the value:
     /// * False: The resulting flags are discarded, and the result is placed in the VF register
@@ -177,10 +197,11 @@ pub struct OctoQuirks {
     /// (original behavior)
     #[serde(
         rename = "vfOrderQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub vf_order: bool,
+    pub vf_order: Option<bool>,
     /// Decides what the behavior of the draw instruction should be if the given sprite height is 0
     /// (DXY0) and the interpreter is in lores (low-resolution 64x32 CHIP-8) mode:
     /// * NoOp: No operation (original behavior)
@@ -188,7 +209,7 @@ pub struct OctoQuirks {
     /// * BigSprite: Draw a 16x16 pixel sprite, ie. the same behavior as in hires (high-resolution
     /// 128x64 SUPER-CHIP/XO-CHIP) mode (Octo behavior)
     #[serde(rename = "loresDXY0Quirks")]
-    pub lores_dxy0: LoResDxy0Behavior,
+    pub lores_dxy0: Option<LoResDxy0Behavior>,
     /// Decides whether the screen should be cleared when there is a resolution change (00FE and
     /// 00FF). Note that if this is true, then the screen should retain the current image when
     /// going from lores (low resolution) to hires (high resolution), which implies that the
@@ -198,20 +219,22 @@ pub struct OctoQuirks {
     /// behavior)
     #[serde(
         rename = "resClearQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub res_clear: bool,
+    pub res_clear: Option<bool>,
     /// Decides whether the delay timer should wrap around when it has counted down to 0 or not:
     /// * True: The delay timer never stops, but overflows from 0 to 255 and keeps counting (DREAM
     /// 6800 behavior)
     /// * False: The delay timer counts down to 0, and then stops (original behavior)
     #[serde(
         rename = "delayWrapQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub delay_wrap: bool,
+    pub delay_wrap: Option<bool>,
     /// Decides the result in the VF flag register when there's a collision of sprites in hires
     /// (high resolution) mode:
     /// * True: VF is set to the number of sprite pixel ros that detected a collision (SUPER-CHIP
@@ -219,10 +242,11 @@ pub struct OctoQuirks {
     /// * False: VF is always set to 1 if there is a collision (original behavior)
     #[serde(
         rename = "hiresCollisionQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub hires_collision: bool,
+    pub hires_collision: Option<bool>,
     /// Decides whether sprites clipping at the bottom of the screen should cound as a collision.
     /// Note that this was probably a bug in the SUPER-CHIP 1.1 interpreter, and might not be
     /// required by any games. Also, this doesn't make much sense if `clip_quirks` is false.
@@ -230,10 +254,11 @@ pub struct OctoQuirks {
     /// * False: VF is unchanged if a sprite runs off the bottom of the screen (original behavior)
     #[serde(
         rename = "clipCollisionQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub clip_collision: bool,
+    pub clip_collision: Option<bool>,
     /// Decides whether scrolling in lores (low-resolution) mode scrolls by half the number of
     /// pixels as in the high resolution mode. This occured in SUPER-CHIP because the low
     /// resolution display was scaled up 2x; see also the `res_clear` quirk.
@@ -243,10 +268,11 @@ pub struct OctoQuirks {
     /// * False: Scrolling acts the same in high and low resolution mode (Octo behavior)
     #[serde(
         rename = "scrollQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub scroll: bool,
+    pub scroll: Option<bool>,
     /// Decides whether the I address register should set the VF flag register if it "overflows"
     /// from `0x0FFF` to above `0x1000`. Only one known game, _Spacefight! 2091_, relies on this
     /// quirk, which was only present in the obscure CHIP-8 interpreter for the Amiga, while at
@@ -256,30 +282,31 @@ pub struct OctoQuirks {
     /// * False: VF is not affected by the I register (original behavior)
     #[serde(
         rename = "overflowIQuirks",
-        serialize_with = "int_from_bool",
-        deserialize_with = "bool_from_int"
+//        serialize_with = "int_from_some_bool",
+        deserialize_with = "some_bool_from_int",
+        default
     )]
-    pub overflow_i: bool,
+    pub overflow_i: Option<bool>,
 }
 
 /// Returns a default where no quirks are enabled, except the ones Octo observe.
 impl Default for OctoQuirks {
     fn default() -> Self {
         Self {
-            shift: false,
-            load_store: false,
-            jump0: false,
-            logic: false,
-            clip: false,
-            vblank: false,
-            vf_order: false,
-            lores_dxy0: LoResDxy0Behavior::BigSprite,
-            res_clear: true,
-            delay_wrap: false,
-            hires_collision: false,
-            clip_collision: false,
-            scroll: false,
-            overflow_i: false,
+            shift: Some(false),
+            load_store: Some(false),
+            jump0: Some(false),
+            logic: Some(false),
+            clip: Some(false),
+            vblank: Some(false),
+            vf_order: Some(false),
+            lores_dxy0: Some(LoResDxy0Behavior::default()),
+            res_clear: Some(true),
+            delay_wrap: Some(false),
+            hires_collision: Some(false),
+            clip_collision: Some(false),
+            scroll: Some(false),
+            overflow_i: Some(false),
         }
     }
 }
@@ -298,7 +325,14 @@ pub enum LoResDxy0Behavior {
     BigSprite,
 }
 
+impl Default for LoResDxy0Behavior {
+    fn default() -> Self {
+        Self::BigSprite
+    }
+}
+
 /// Representation of Octo options.
+#[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct OctoOptions {
@@ -310,7 +344,8 @@ pub struct OctoOptions {
     /// * 7–15 (approximate speed of the original interpreter for the COSMAC VIP)
     /// * 20–30 (approximate speed of the SUPER-CHIP interpreters for the HP 48 calculators)
     /// * 10000 (Octo's "Ludicrous speed" setting)
-    pub tickrate: u16,
+    #[serde(default, deserialize_with = "some_u16_from_int_or_str")]
+    pub tickrate: Option<u16>,
     /// The maximum amount of virtual memory, in bytes, that is available to the program. If the CHIP-8 program is
     /// larger than this, the interpreter should give an error.
     ///
@@ -329,12 +364,20 @@ pub struct OctoOptions {
     ///
     /// Other values might be used for games for more obscure platforms, games that were designed
     /// to run on a COSMAC VIP with only 2K RAM, etc.
-    pub max_size: u16, // {3216, 3583, 3584, 65024}
+    //#[serde(
+    //    default = "default_start_address",
+    //    skip_serializing_if = "is_default_start_address"
+    //)]
+    #[serde(default, deserialize_with = "some_u16_from_int_or_str")]
+    pub max_size: Option<u16>, // {3216, 3583, 3584, 65024}
     /// The orientation of the display.
+    #[serde(default)]
     pub screen_rotation: ScreenRotation,
     /// The font style expected by the game.
+    #[serde(default)]
     pub font_style: OctoFont, // OCTO_FONT_...
     /// The touch controls this game supports.
+    #[serde(default)]
     pub touch_input_mode: OctoTouchMode, // OCTO_TOUCH_...
     /// The memory address in the virtual RAM that this game should be loaded from. On legacy
     /// hardware, the interpreter itself was loaded into the lower memory addresses, and then the
@@ -343,7 +386,12 @@ pub struct OctoOptions {
     /// Common values:
     /// * 512 (original interpreter for the COSMAC VIP, DREAM 6800, HP 48, etc)
     /// * 1536 (interpreter for the ETI-660)
-    pub start_address: u16,
+    //#[serde(
+    //    default = "default_start_address",
+    //    skip_serializing_if = "is_default_start_address"
+    //)]
+    #[serde(default, deserialize_with = "some_u16_from_int_or_str")]
+    pub start_address: Option<u16>,
 
     /// Custom colors this game would like to use, if possible. It's not important for a CHIP-8
     /// interpreter to support custom colors although not doing so might impact the creator's
@@ -361,16 +409,24 @@ pub struct OctoOptions {
 impl Default for OctoOptions {
     fn default() -> Self {
         Self {
-            tickrate: 500,
-            max_size: 3584,
+            tickrate: Some(500),
+            max_size: Some(3584),
             screen_rotation: ScreenRotation::default(),
             font_style: OctoFont::default(),
             touch_input_mode: OctoTouchMode::default(),
-            start_address: 512,
+            start_address: Some(512),
             colors: OctoColors::default(),
             quirks: OctoQuirks::default(),
         }
     }
+}
+
+fn default_start_address() -> u16 {
+    512
+}
+
+fn is_default_start_address(address: &u16) -> bool {
+    *address == 512
 }
 
 /// Possible orientations of the display. Note that this should only affect the visual
@@ -417,26 +473,59 @@ impl fmt::Display for OctoOptions {
     }
 }
 
-fn bool_from_int<'de, D>(deserializer: D) -> Result<bool, D::Error>
+fn some_u16_from_int_or_str<'de, D>(deserializer: D) -> Result<Option<u16>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    match u8::deserialize(deserializer)? {
-        0 => Ok(false),
-        1 => Ok(true),
-        other => Err(de::Error::invalid_value(
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum U16OrStr<'a> {
+        U16(u16),
+        Str(&'a str),
+    }
+
+    Ok(match U16OrStr::deserialize(deserializer)? {
+        //U16OrStr::Str(v) => v.parse().unwrap_or(None), //match v.parse() {
+        U16OrStr::Str(v) => match v.parse() {
+            Ok(v) => Some(v),
+            Err(other) => None,
+        },
+        U16OrStr::U16(v) => Some(v),
+    })
+}
+
+fn some_bool_from_int<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum BoolOrU8 {
+        Bool(bool),
+        U8(u8),
+    }
+
+    match BoolOrU8::deserialize(deserializer)? {
+        BoolOrU8::Bool(v) => Ok(Some(v)),
+        BoolOrU8::U8(1) => Ok(Some(true)),
+        BoolOrU8::U8(0) => Ok(Some(false)),
+        BoolOrU8::U8(other) => Err(de::Error::invalid_value(
             Unexpected::Unsigned(other as u64),
             &"zero or one",
         )),
     }
 }
 
-fn int_from_bool<S>(x: &bool, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
-    serializer.serialize_u8(if *x { 1 } else { 0 })
-}
+//fn int_from_some_bool<S>(some_bool: &Option<bool>, serializer: S) -> Result<S::Ok, S::Error>
+//where
+//    S: Serializer,
+//{
+//    // This function will only be called during serialization, and we know that the argument isn't
+//    // None because we skip serializing these fields if they're None, so we simply unwrap here. If this
+//    // panics, some serde derive is missing, or we're using this function for something it's not
+//    // intended.
+//    serializer.serialize_u8(if some_bool.unwrap() { 1 } else { 0 })
+//}
 
 /// Represents the different fonts a CHIP-8 interpreter can provide. The default is Octo's modern font,
 /// which contains all the digits in both sizes and is used by most modern games.
