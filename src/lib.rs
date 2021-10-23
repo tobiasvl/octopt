@@ -64,7 +64,7 @@ impl Default for OctoColors {
 
 /// Represents the different touch modes support by [Octo](https://github.com/JohnEarnest/Octo).
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "lowercase")]
 pub enum OctoTouchMode {
     /// Do not attempt to handle touch input.
     None,
@@ -126,7 +126,6 @@ pub struct OctoQuirks {
     /// SUPER-CHIP behavior)
     #[serde(
         rename = "shiftQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -138,7 +137,6 @@ pub struct OctoQuirks {
     /// * True: The I register is left unchanged after the operation. (SUPER-CHIP behavior)
     #[serde(
         rename = "loadStoreQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -150,7 +148,6 @@ pub struct OctoQuirks {
     /// address XNN (CHIP48 and SUPER-CHIP behavior)
     #[serde(
         rename = "jumpQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -163,7 +160,6 @@ pub struct OctoQuirks {
     /// behavior)
     #[serde(
         rename = "logicQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -173,7 +169,6 @@ pub struct OctoQuirks {
     /// * True: Sprites are clipped on screen edges (original, CHIP-48 and SUPER-CHIP behavior)
     #[serde(
         rename = "clipQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -185,7 +180,6 @@ pub struct OctoQuirks {
     /// it waits for a "VBlank interrupt" (original behavior)
     #[serde(
         rename = "vBlankQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -197,7 +191,6 @@ pub struct OctoQuirks {
     /// (original behavior)
     #[serde(
         rename = "vfOrderQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -219,7 +212,6 @@ pub struct OctoQuirks {
     /// behavior)
     #[serde(
         rename = "resClearQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -230,7 +222,6 @@ pub struct OctoQuirks {
     /// * False: The delay timer counts down to 0, and then stops (original behavior)
     #[serde(
         rename = "delayWrapQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -242,7 +233,6 @@ pub struct OctoQuirks {
     /// * False: VF is always set to 1 if there is a collision (original behavior)
     #[serde(
         rename = "hiresCollisionQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -254,7 +244,6 @@ pub struct OctoQuirks {
     /// * False: VF is unchanged if a sprite runs off the bottom of the screen (original behavior)
     #[serde(
         rename = "clipCollisionQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -268,7 +257,6 @@ pub struct OctoQuirks {
     /// * False: Scrolling acts the same in high and low resolution mode (Octo behavior)
     #[serde(
         rename = "scrollQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -282,7 +270,6 @@ pub struct OctoQuirks {
     /// * False: VF is not affected by the I register (original behavior)
     #[serde(
         rename = "overflowIQuirks",
-//        serialize_with = "int_from_some_bool",
         deserialize_with = "some_bool_from_int",
         default
     )]
@@ -469,7 +456,6 @@ where
     }
 
     Ok(match U16OrStr::deserialize(deserializer)? {
-        //U16OrStr::Str(v) => v.parse().unwrap_or(None), //match v.parse() {
         U16OrStr::Str(v) => match v.parse() {
             Ok(v) => Some(v),
             Err(_) => None,
@@ -500,17 +486,6 @@ where
     }
 }
 
-//fn int_from_some_bool<S>(some_bool: &Option<bool>, serializer: S) -> Result<S::Ok, S::Error>
-//where
-//    S: Serializer,
-//{
-//    // This function will only be called during serialization, and we know that the argument isn't
-//    // None because we skip serializing these fields if they're None, so we simply unwrap here. If this
-//    // panics, some serde derive is missing, or we're using this function for something it's not
-//    // intended.
-//    serializer.serialize_u8(if some_bool.unwrap() { 1 } else { 0 })
-//}
-
 /// Represents the different fonts a CHIP-8 interpreter can provide. The default is Octo's modern font,
 /// which contains all the digits in both sizes and is used by most modern games.
 ///
@@ -518,7 +493,7 @@ where
 /// possible, and for that reason (and to make historical games look accurate) the font can be
 /// overriden here _and_ you can get the sprite data for the fonts by calling [`get_font_data`].
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
+#[serde(rename_all = "lowercase")]
 pub enum OctoFont {
     /// The font used by [Octo](https://github.com/JohnEarnest). Its small digits are identical to
     /// SUPER-CHIP's, but the big digits are a bigger version of the small ones, rather than
