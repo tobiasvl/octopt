@@ -10,6 +10,9 @@
 
 pub mod color;
 use color::Color;
+mod ini;
+use crate::ini::OctoOptionsIni;
+use crate::ini::*;
 use serde::de::{self, Deserializer, Unexpected};
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
@@ -62,7 +65,7 @@ impl Default for OctoColors {
     }
 }
 
-/// Represents the different touch modes support by [Octo](https://github.com/JohnEarnest/Octo).
+/// Represents the different touch modes supported by [Octo](https://github.com/JohnEarnest/Octo).
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum OctoTouchMode {
@@ -429,6 +432,27 @@ impl FromStr for OctoOptions {
     type Err = serde_json::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         serde_json::from_str(s)
+    }
+}
+
+impl OctoOptions {
+    //fn from_ini_reader(reader: std::io::Read) -> OctoOptions {
+    //    let mut buffer = String::new();
+    //    reader.read_to_string(&mut buffer)?;
+    //    let ooi: OctoOptionsIni = serde_ini::from_str(buffer).unwrap();
+    //    OctoOptions::from(ooi)
+    //}
+
+    /// Deserializes OctoOptions from an INI string.
+    pub fn from_ini(s: &str) -> OctoOptions {
+        let ooi: OctoOptionsIni = serde_ini::from_str(s).unwrap();
+        OctoOptions::from(ooi)
+    }
+
+    /// Serializes OctoOptions to an INI string.
+    pub fn to_ini(o: OctoOptions) -> String {
+        let ooi: OctoOptionsIni = OctoOptionsIni::from(o);
+        serde_ini::to_string(&ooi).unwrap()
     }
 }
 

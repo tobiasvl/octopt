@@ -6,7 +6,7 @@ octopt
 
 `octopt` is a library for handling CHIP-8 configuration settings.
 
-It contains Rust data structures that aim to represent all possible CHIP-8 options. It can also serialize and deserialize these structures from and into [Octo](https://github.com/JohnEarnest/Octo)'s standard JSON format (and, soon, the INI format).
+It contains Rust data structures that aim to represent all possible CHIP-8 options. It can also serialize and deserialize these structures from and into [Octo](https://github.com/JohnEarnest/Octo)'s standard JSON format and [C-Octo](https://github.com/JohnEarnest/c-octo)'s INI-like format.
 
 See the [`octopt` documentation](https://docs.rs/octopt) for details. The documentation is fairly verbose.
 
