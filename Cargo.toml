@@ -1,9 +1,9 @@
 [package]
 name = "octopt"
-version = "0.0.12"
+version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "CHIP-8/Octo configuration options"
+description = "CHIP-8 configuration"
 repository = "https://github.com/tobiasvl/octopt"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

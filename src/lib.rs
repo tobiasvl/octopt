@@ -11,8 +11,7 @@
 pub mod color;
 use color::Color;
 mod ini;
-use crate::ini::OctoOptionsIni;
-use crate::ini::*;
+use ini::OptionsIni;
 use serde::de::{self, Deserializer, Unexpected};
 use serde::{Deserialize, Serialize};
 use serde_repr::*;
@@ -26,7 +25,7 @@ use std::u8;
 #[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct OctoColors {
+pub struct Colors {
     /// The standard color used for active pixels on the CHIP-8 screen. For XO-CHIP, it's used for
     /// the first drawing plane.
     pub fill_color: Option<Color>,
@@ -44,7 +43,7 @@ pub struct OctoColors {
 
 /// The default colorscheme here is white on black, which is most common, with non-standard colors
 /// for the other elements, albeit inspried by Octo's "Hot Dog" preset.
-impl Default for OctoColors {
+impl Default for Colors {
     fn default() -> Self {
         Self {
             fill_color: Some(Color {
@@ -68,7 +67,7 @@ impl Default for OctoColors {
 /// Represents the different touch modes supported by [Octo](https://github.com/JohnEarnest/Octo).
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum OctoTouchMode {
+pub enum TouchMode {
     /// Do not attempt to handle touch input.
     None,
     /// Taps on the screen are treated like pressing key 6. Swipes or dragging and holding on the
@@ -87,7 +86,7 @@ pub enum OctoTouchMode {
     Vip,
 }
 
-impl Default for OctoTouchMode {
+impl Default for TouchMode {
     fn default() -> Self {
         Self::None
     }
@@ -121,7 +120,7 @@ impl Default for OctoTouchMode {
 #[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct OctoQuirks {
+pub struct Quirks {
     /// Decides the behavior of the CHIP-8 shift instructions 8XY6 (right shift) and 8XYE (left shift):
     /// * False: The value in the VY register is shifted, and the result is placed in the VX
     /// register. (Original behavior)
@@ -280,7 +279,7 @@ pub struct OctoQuirks {
 }
 
 /// Returns a default where no quirks are enabled, except the ones Octo observe.
-impl Default for OctoQuirks {
+impl Default for Quirks {
     fn default() -> Self {
         Self {
             shift: Some(false),
@@ -325,7 +324,7 @@ impl Default for LoResDxy0Behavior {
 #[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct OctoOptions {
+pub struct Options {
     /// The number of CHIP-8 instructions executed per 60Hz frame, ie. the "speed" of the virtual
     /// CPU. These are all approximations of hardware limitations, because on real hardware
     /// different instructions execute in different times, but it's a conventional middle ground.
@@ -361,10 +360,10 @@ pub struct OctoOptions {
     pub screen_rotation: ScreenRotation,
     /// The font style expected by the game.
     #[serde(default)]
-    pub font_style: OctoFont, // OCTO_FONT_...
+    pub font_style: Font, // OCTO_FONT_...
     /// The touch controls this game supports.
     #[serde(default)]
-    pub touch_input_mode: OctoTouchMode, // OCTO_TOUCH_...
+    pub touch_input_mode: TouchMode, // OCTO_TOUCH_...
     /// The memory address in the virtual RAM that this game should be loaded from. On legacy
     /// hardware, the interpreter itself was loaded into the lower memory addresses, and then the
     /// game was loaded after it (usually at address `0x200`, ie. 512).
@@ -379,26 +378,26 @@ pub struct OctoOptions {
     /// interpreter to support custom colors although not doing so might impact the creator's
     /// artistic vision, especially for XO-CHIP games that use more than two colors.
     #[serde(flatten)]
-    pub colors: OctoColors,
+    pub colors: Colors,
 
     /// Specific behaviors this game expects from the interpreter in order to run properly. See
     /// [`OctoQuirks`] for specifics.
     #[serde(flatten)]
-    pub quirks: OctoQuirks,
+    pub quirks: Quirks,
 }
 
 /// Returns a default where no quirks are enabled, except that the [`LoResDxy0Behavior`] assumed Octo behavior..
-impl Default for OctoOptions {
+impl Default for Options {
     fn default() -> Self {
         Self {
             tickrate: Some(500),
             max_size: Some(3584),
             screen_rotation: ScreenRotation::default(),
-            font_style: OctoFont::default(),
-            touch_input_mode: OctoTouchMode::default(),
+            font_style: Font::default(),
+            touch_input_mode: TouchMode::default(),
             start_address: Some(512),
-            colors: OctoColors::default(),
-            quirks: OctoQuirks::default(),
+            colors: Colors::default(),
+            quirks: Quirks::default(),
         }
     }
 }
@@ -425,41 +424,39 @@ impl Default for ScreenRotation {
     }
 }
 
-/// Deserializes OctoOptions from a JSON string.
+/// Deserializes Options from a JSON string.
 ///
 /// This format is used by Octo in OctoCarts and HTML exports, as well as the Chip-8 Archive.
-impl FromStr for OctoOptions {
+impl FromStr for Options {
     type Err = serde_json::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         serde_json::from_str(s)
     }
 }
 
-impl OctoOptions {
-    //fn from_ini_reader(reader: std::io::Read) -> OctoOptions {
+impl Options {
+    //fn from_ini_reader(reader: std::io::Read) -> Options {
     //    let mut buffer = String::new();
     //    reader.read_to_string(&mut buffer)?;
-    //    let ooi: OctoOptionsIni = serde_ini::from_str(buffer).unwrap();
-    //    OctoOptions::from(ooi)
+    //    let ooi: OptionsIni = serde_ini::from_str(buffer).unwrap();
+    //    Options::from(ooi)
     //}
 
-    /// Deserializes OctoOptions from an INI string.
-    pub fn from_ini(s: &str) -> OctoOptions {
-        let ooi: OctoOptionsIni = serde_ini::from_str(s).unwrap();
-        OctoOptions::from(ooi)
+    /// Deserializes Options from an INI string.
+    pub fn from_ini(s: &str) -> Result<Self, serde_ini::de::Error> {
+        Ok(Options::from(OptionsIni::from_str(s)?))
     }
 
-    /// Serializes OctoOptions to an INI string.
-    pub fn to_ini(o: OctoOptions) -> String {
-        let ooi: OctoOptionsIni = OctoOptionsIni::from(o);
-        serde_ini::to_string(&ooi).unwrap()
+    /// Serializes Options to an INI string.
+    pub fn to_ini(o: Options) -> String {
+        OptionsIni::to_string(&OptionsIni::from(o))
     }
 }
 
-/// Serializes OctoOptions into a JSON string.
+/// Serializes Options into a JSON string.
 ///
 /// This format is used by Octo in OctoCarts and HTML exports, as well as the Chip-8 Archive.
-impl fmt::Display for OctoOptions {
+impl fmt::Display for Options {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match serde_json::to_string(self) {
             Ok(string) => write!(f, "{}", string),
@@ -468,6 +465,9 @@ impl fmt::Display for OctoOptions {
     }
 }
 
+// Could have used serde_aux::field_attributes::deserialize_option_number_from_string here
+// but let's not pull in that dep just for this. If it had deserialize_option_bool_from_anything
+// then we'd be talking.
 fn some_u16_from_int_or_str<'de, D>(deserializer: D) -> Result<Option<u16>, D::Error>
 where
     D: Deserializer<'de>,
@@ -517,7 +517,7 @@ where
 /// overriden here _and_ you can get the sprite data for the fonts by calling [`get_font_data`].
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub enum OctoFont {
+pub enum Font {
     /// The font used by [Octo](https://github.com/JohnEarnest). Its small digits are identical to
     /// SUPER-CHIP's, but the big digits are a bigger version of the small ones, rather than
     /// SUPER-CHIP's rounded big digits. Contains small digits for 0–F, as well as big digits for 0–F.
@@ -544,7 +544,7 @@ pub enum OctoFont {
 
 /// The default font is Octo's font, as it's the modern standard and contains all hexadecimal digits
 /// in both small and large variants.
-impl Default for OctoFont {
+impl Default for Font {
     fn default() -> Self {
         Self::Octo
     }
@@ -564,9 +564,9 @@ impl Default for OctoFont {
 /// A modern CHIP-8 interpreter will put its font data (for one font) somewhere in the first 512 bytes of
 /// memory, which are reserved for the interpreter, but the actual memory location doesn't matter.
 /// It's common to put it at either address 0 or 80 (`0x50`).
-pub fn get_font_data(font: OctoFont) -> ([u8; 5 * 16], Option<Vec<u8>>) {
+pub fn get_font_data(font: Font) -> ([u8; 5 * 16], Option<Vec<u8>>) {
     match font {
-        OctoFont::Octo => (
+        Font::Octo => (
             [
                 0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
                 0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -604,7 +604,7 @@ pub fn get_font_data(font: OctoFont) -> ([u8; 5 * 16], Option<Vec<u8>>) {
                 0xFF, 0xFF, 0xC0, 0xC0, 0xFF, 0xFF, 0xC0, 0xC0, 0xC0, 0xC0, // F
             ]),
         ),
-        OctoFont::Vip => (
+        Font::Vip => (
             [
                 0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
                 0x60, 0x20, 0x20, 0x20, 0x70, // 1
@@ -625,7 +625,7 @@ pub fn get_font_data(font: OctoFont) -> ([u8; 5 * 16], Option<Vec<u8>>) {
             ],
             None,
         ),
-        OctoFont::Dream6800 => (
+        Font::Dream6800 => (
             [
                 0xE0, 0xA0, 0xA0, 0xA0, 0xE0, // 0
                 0x40, 0x40, 0x40, 0x40, 0x40, // 1
@@ -646,7 +646,7 @@ pub fn get_font_data(font: OctoFont) -> ([u8; 5 * 16], Option<Vec<u8>>) {
             ],
             None,
         ),
-        OctoFont::Eti660 => (
+        Font::Eti660 => (
             [
                 0xE0, 0xA0, 0xA0, 0xA0, 0xE0, // 0
                 0x20, 0x20, 0x20, 0x20, 0x20, // 1
@@ -667,7 +667,7 @@ pub fn get_font_data(font: OctoFont) -> ([u8; 5 * 16], Option<Vec<u8>>) {
             ],
             None,
         ),
-        OctoFont::Schip => (
+        Font::Schip => (
             [
                 0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
                 0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -699,7 +699,7 @@ pub fn get_font_data(font: OctoFont) -> ([u8; 5 * 16], Option<Vec<u8>>) {
                 0x3C, 0x7E, 0xC3, 0xC3, 0x7F, 0x3F, 0x03, 0x03, 0x3E, 0x7C, // 9
             ]),
         ),
-        OctoFont::Fish => (
+        Font::Fish => (
             [
                 0x60, 0xA0, 0xA0, 0xA0, 0xC0, // 0
                 0x40, 0xC0, 0x40, 0x40, 0xE0, // 1
@@ -738,7 +738,7 @@ pub fn get_font_data(font: OctoFont) -> ([u8; 5 * 16], Option<Vec<u8>>) {
                 0xFE, 0x66, 0x62, 0x64, 0x7C, 0x64, 0x60, 0x60, 0xF0, 0x00, // F
             ]),
         ),
-        OctoFont::AKouZ1 => (
+        Font::AKouZ1 => (
             [
                 0x60, 0x90, 0x90, 0x90, 0x60, // 0
                 0x20, 0x60, 0x20, 0x20, 0x70, // 1

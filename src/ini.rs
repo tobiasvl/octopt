@@ -1,16 +1,15 @@
 use crate::color::Color;
 use crate::*;
-//use crate::{some_bool_from_int, some_u16_from_int_or_str};
 use serde::de::{self, Deserializer, Unexpected};
 use serde::{Deserialize, Serialize, Serializer};
-use serde_repr::*;
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 use std::fmt;
 use std::str::FromStr;
 
 #[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub(crate) struct OctoColorsIni {
+pub(crate) struct ColorsIni {
     #[serde(rename = "colors.plane1", serialize_with = "without_hash")]
     fill_color: Option<Color>,
     #[serde(rename = "colors.plane2", serialize_with = "without_hash")]
@@ -30,14 +29,14 @@ where
     S: Serializer,
 {
     let color_str = color.as_ref().unwrap().to_string();
-    serializer.serialize_str(if color_str.starts_with('#') {
-        &color_str[1..]
+    serializer.serialize_str(if let Some(stripped) = color_str.strip_prefix('#') {
+        stripped
     } else {
         &color_str
     })
 }
 
-impl Default for OctoColorsIni {
+impl Default for ColorsIni {
     fn default() -> Self {
         Self {
             fill_color: Some(Color {
@@ -58,8 +57,8 @@ impl Default for OctoColorsIni {
     }
 }
 
-impl From<crate::OctoColors> for OctoColorsIni {
-    fn from(colors: crate::OctoColors) -> Self {
+impl From<Colors> for ColorsIni {
+    fn from(colors: Colors) -> Self {
         Self {
             fill_color: colors.fill_color,
             fill_color2: colors.fill_color2,
@@ -71,8 +70,8 @@ impl From<crate::OctoColors> for OctoColorsIni {
     }
 }
 
-impl From<crate::OctoColorsIni> for OctoColors {
-    fn from(colors: crate::OctoColorsIni) -> Self {
+impl From<ColorsIni> for Colors {
+    fn from(colors: ColorsIni) -> Self {
         Self {
             fill_color: colors.fill_color,
             fill_color2: colors.fill_color2,
@@ -86,7 +85,7 @@ impl From<crate::OctoColorsIni> for OctoColors {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
-pub(crate) enum OctoTouchModeIni {
+pub(crate) enum TouchModeIni {
     None,
     Swipe,
     Seg16,
@@ -95,33 +94,33 @@ pub(crate) enum OctoTouchModeIni {
     Vip,
 }
 
-impl From<crate::OctoTouchMode> for OctoTouchModeIni {
-    fn from(touch: crate::OctoTouchMode) -> Self {
+impl From<TouchMode> for TouchModeIni {
+    fn from(touch: TouchMode) -> Self {
         match touch {
-            crate::OctoTouchMode::None => Self::None,
-            crate::OctoTouchMode::Swipe => Self::Swipe,
-            crate::OctoTouchMode::Seg16 => Self::Seg16,
-            crate::OctoTouchMode::Seg16Fill => Self::Seg16Fill,
-            crate::OctoTouchMode::Gamepad => Self::Gamepad,
-            crate::OctoTouchMode::Vip => Self::Vip,
+            TouchMode::None => Self::None,
+            TouchMode::Swipe => Self::Swipe,
+            TouchMode::Seg16 => Self::Seg16,
+            TouchMode::Seg16Fill => Self::Seg16Fill,
+            TouchMode::Gamepad => Self::Gamepad,
+            TouchMode::Vip => Self::Vip,
         }
     }
 }
 
-impl From<crate::OctoTouchModeIni> for OctoTouchMode {
-    fn from(touch: crate::OctoTouchModeIni) -> Self {
+impl From<TouchModeIni> for TouchMode {
+    fn from(touch: TouchModeIni) -> Self {
         match touch {
-            crate::OctoTouchModeIni::None => Self::None,
-            crate::OctoTouchModeIni::Swipe => Self::Swipe,
-            crate::OctoTouchModeIni::Seg16 => Self::Seg16,
-            crate::OctoTouchModeIni::Seg16Fill => Self::Seg16Fill,
-            crate::OctoTouchModeIni::Gamepad => Self::Gamepad,
-            crate::OctoTouchModeIni::Vip => Self::Vip,
+            TouchModeIni::None => Self::None,
+            TouchModeIni::Swipe => Self::Swipe,
+            TouchModeIni::Seg16 => Self::Seg16,
+            TouchModeIni::Seg16Fill => Self::Seg16Fill,
+            TouchModeIni::Gamepad => Self::Gamepad,
+            TouchModeIni::Vip => Self::Vip,
         }
     }
 }
 
-impl Default for OctoTouchModeIni {
+impl Default for TouchModeIni {
     fn default() -> Self {
         Self::None
     }
@@ -133,7 +132,7 @@ impl Default for ScreenRotationIni {
     }
 }
 
-impl Default for OctoFontIni {
+impl Default for FontIni {
     fn default() -> Self {
         Self::Octo
     }
@@ -141,7 +140,7 @@ impl Default for OctoFontIni {
 
 #[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub(crate) struct OctoQuirksIni {
+pub(crate) struct QuirksIni {
     #[serde(
         rename = "quirks.shift",
         deserialize_with = "some_bool_from_int",
@@ -192,7 +191,7 @@ pub(crate) struct OctoQuirksIni {
     )]
     vf_order: Option<bool>,
     #[serde(rename = "quirks.lores_dxy0")]
-    lores_dxy0: Option<crate::LoResDxy0Behavior>,
+    lores_dxy0: Option<LoResDxy0Behavior>,
     #[serde(
         rename = "quirks.resclear",
         deserialize_with = "some_bool_from_int",
@@ -237,8 +236,8 @@ pub(crate) struct OctoQuirksIni {
     overflow_i: Option<bool>,
 }
 
-impl From<crate::OctoQuirks> for OctoQuirksIni {
-    fn from(quirks: crate::OctoQuirks) -> Self {
+impl From<Quirks> for QuirksIni {
+    fn from(quirks: Quirks) -> Self {
         Self {
             shift: quirks.shift,
             load_store: quirks.load_store,
@@ -258,8 +257,8 @@ impl From<crate::OctoQuirks> for OctoQuirksIni {
     }
 }
 
-impl From<crate::OctoQuirksIni> for OctoQuirks {
-    fn from(quirks: crate::OctoQuirksIni) -> Self {
+impl From<QuirksIni> for Quirks {
+    fn from(quirks: QuirksIni) -> Self {
         Self {
             shift: quirks.shift,
             load_store: quirks.load_store,
@@ -281,7 +280,7 @@ impl From<crate::OctoQuirksIni> for OctoQuirks {
 
 #[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-pub(crate) struct OctoOptionsIni {
+pub(crate) struct OptionsIni {
     #[serde(default, rename = "core.tickrate")]
     tickrate: Option<u16>,
     #[serde(default, rename = "core.max_rom")]
@@ -289,45 +288,45 @@ pub(crate) struct OctoOptionsIni {
     #[serde(default, rename = "core.rotation")]
     screen_rotation: ScreenRotationIni,
     #[serde(default, rename = "core.font")]
-    font_style: OctoFontIni,
+    font_style: FontIni,
     #[serde(default, rename = "core.touch_mode")]
-    touch_input_mode: OctoTouchModeIni,
+    touch_input_mode: TouchModeIni,
     #[serde(default, rename = "core.start_address")]
     start_address: Option<u16>,
 
     #[serde(flatten)]
-    colors: OctoColorsIni,
+    colors: ColorsIni,
 
     #[serde(flatten)]
-    quirks: OctoQuirksIni,
+    quirks: QuirksIni,
 }
 
-impl From<crate::OctoOptions> for OctoOptionsIni {
-    fn from(options: crate::OctoOptions) -> Self {
+impl From<Options> for OptionsIni {
+    fn from(options: Options) -> Self {
         Self {
             tickrate: options.tickrate,
             max_size: options.max_size,
             screen_rotation: ScreenRotationIni::from(options.screen_rotation),
-            font_style: OctoFontIni::from(options.font_style),
-            touch_input_mode: OctoTouchModeIni::from(options.touch_input_mode),
+            font_style: FontIni::from(options.font_style),
+            touch_input_mode: TouchModeIni::from(options.touch_input_mode),
             start_address: options.start_address,
-            colors: OctoColorsIni::from(options.colors),
-            quirks: OctoQuirksIni::from(options.quirks),
+            colors: ColorsIni::from(options.colors),
+            quirks: QuirksIni::from(options.quirks),
         }
     }
 }
 
-impl From<crate::OctoOptionsIni> for OctoOptions {
-    fn from(options: crate::OctoOptionsIni) -> Self {
+impl From<OptionsIni> for Options {
+    fn from(options: OptionsIni) -> Self {
         Self {
             tickrate: options.tickrate,
             max_size: options.max_size,
             screen_rotation: ScreenRotation::from(options.screen_rotation),
-            font_style: OctoFont::from(options.font_style),
-            touch_input_mode: OctoTouchMode::from(options.touch_input_mode),
+            font_style: Font::from(options.font_style),
+            touch_input_mode: TouchMode::from(options.touch_input_mode),
             start_address: options.start_address,
-            colors: OctoColors::from(options.colors),
-            quirks: OctoQuirks::from(options.quirks),
+            colors: Colors::from(options.colors),
+            quirks: Quirks::from(options.quirks),
         }
     }
 }
@@ -341,44 +340,44 @@ pub(crate) enum ScreenRotationIni {
     CounterClockWise = 270,
 }
 
-impl From<crate::ScreenRotation> for ScreenRotationIni {
-    fn from(rotation: crate::ScreenRotation) -> Self {
+impl From<ScreenRotation> for ScreenRotationIni {
+    fn from(rotation: ScreenRotation) -> Self {
         match rotation {
-            crate::ScreenRotation::Normal => Self::Normal,
-            crate::ScreenRotation::ClockWise => Self::ClockWise,
-            crate::ScreenRotation::CounterClockWise => Self::CounterClockWise,
-            crate::ScreenRotation::UpsideDown => Self::UpsideDown,
+            ScreenRotation::Normal => Self::Normal,
+            ScreenRotation::ClockWise => Self::ClockWise,
+            ScreenRotation::CounterClockWise => Self::CounterClockWise,
+            ScreenRotation::UpsideDown => Self::UpsideDown,
         }
     }
 }
 
-impl From<crate::ScreenRotationIni> for ScreenRotation {
-    fn from(rotation: crate::ScreenRotationIni) -> Self {
+impl From<ScreenRotationIni> for ScreenRotation {
+    fn from(rotation: ScreenRotationIni) -> Self {
         match rotation {
-            crate::ScreenRotationIni::Normal => Self::Normal,
-            crate::ScreenRotationIni::ClockWise => Self::ClockWise,
-            crate::ScreenRotationIni::CounterClockWise => Self::CounterClockWise,
-            crate::ScreenRotationIni::UpsideDown => Self::UpsideDown,
+            ScreenRotationIni::Normal => Self::Normal,
+            ScreenRotationIni::ClockWise => Self::ClockWise,
+            ScreenRotationIni::CounterClockWise => Self::CounterClockWise,
+            ScreenRotationIni::UpsideDown => Self::UpsideDown,
         }
     }
 }
 
-/// Deserializes OctoOptions from a JSON string.
+/// Deserializes Options from a JSON string.
 ///
 /// This format is used by Octo in OctoCarts and HTML exports, as well as the Chip-8 Archive.
-impl FromStr for OctoOptionsIni {
-    type Err = serde_json::Error;
+impl FromStr for OptionsIni {
+    type Err = serde_ini::de::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_str(s)
+        serde_ini::from_str(s)
     }
 }
 
-/// Serializes OctoOptions into a JSON string.
+/// Serializes Options into a JSON string.
 ///
 /// This format is used by Octo in OctoCarts and HTML exports, as well as the Chip-8 Archive.
-impl fmt::Display for OctoOptionsIni {
+impl fmt::Display for OptionsIni {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match serde_json::to_string(self) {
+        match serde_ini::to_string(self) {
             Ok(string) => write!(f, "{}", string),
             _ => Err(fmt::Error),
         }
@@ -387,7 +386,7 @@ impl fmt::Display for OctoOptionsIni {
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub(crate) enum OctoFontIni {
+pub(crate) enum FontIni {
     Octo,
     Vip,
     Dream6800,
@@ -397,30 +396,30 @@ pub(crate) enum OctoFontIni {
     AKouZ1,
 }
 
-impl From<crate::OctoFont> for OctoFontIni {
-    fn from(font: crate::OctoFont) -> Self {
+impl From<Font> for FontIni {
+    fn from(font: Font) -> Self {
         match font {
-            crate::OctoFont::Octo => Self::Octo,
-            crate::OctoFont::Vip => Self::Vip,
-            crate::OctoFont::Dream6800 => Self::Dream6800,
-            crate::OctoFont::Eti660 => Self::Eti660,
-            crate::OctoFont::Schip => Self::Schip,
-            crate::OctoFont::Fish => Self::Fish,
-            crate::OctoFont::AKouZ1 => Self::AKouZ1,
+            Font::Octo => Self::Octo,
+            Font::Vip => Self::Vip,
+            Font::Dream6800 => Self::Dream6800,
+            Font::Eti660 => Self::Eti660,
+            Font::Schip => Self::Schip,
+            Font::Fish => Self::Fish,
+            Font::AKouZ1 => Self::AKouZ1,
         }
     }
 }
 
-impl From<crate::OctoFontIni> for OctoFont {
-    fn from(font: crate::OctoFontIni) -> Self {
+impl From<FontIni> for Font {
+    fn from(font: FontIni) -> Self {
         match font {
-            crate::OctoFontIni::Octo => Self::Octo,
-            crate::OctoFontIni::Vip => Self::Vip,
-            crate::OctoFontIni::Dream6800 => Self::Dream6800,
-            crate::OctoFontIni::Eti660 => Self::Eti660,
-            crate::OctoFontIni::Schip => Self::Schip,
-            crate::OctoFontIni::Fish => Self::Fish,
-            crate::OctoFontIni::AKouZ1 => Self::AKouZ1,
+            FontIni::Octo => Self::Octo,
+            FontIni::Vip => Self::Vip,
+            FontIni::Dream6800 => Self::Dream6800,
+            FontIni::Eti660 => Self::Eti660,
+            FontIni::Schip => Self::Schip,
+            FontIni::Fish => Self::Fish,
+            FontIni::AKouZ1 => Self::AKouZ1,
         }
     }
 }
