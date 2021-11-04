@@ -67,6 +67,7 @@ impl Default for Colors {
 /// Represents the different touch modes supported by [Octo](https://github.com/JohnEarnest/Octo).
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum TouchMode {
     /// Do not attempt to handle touch input.
     None,
@@ -120,6 +121,7 @@ impl Default for TouchMode {
 #[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct Quirks {
     /// Decides the behavior of the CHIP-8 shift instructions 8XY6 (right shift) and 8XYE (left shift):
     /// * False: The value in the VY register is shifted, and the result is placed in the VX
@@ -324,6 +326,7 @@ impl Default for LoResDxy0Behavior {
 #[skip_serializing_none]
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+#[non_exhaustive]
 pub struct Options {
     /// The number of CHIP-8 instructions executed per 60Hz frame, ie. the "speed" of the virtual
     /// CPU. These are all approximations of hardware limitations, because on real hardware
@@ -517,6 +520,7 @@ where
 /// overriden here _and_ you can get the sprite data for the fonts by calling [`get_font_data`].
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
+#[non_exhaustive]
 pub enum Font {
     /// The font used by [Octo](https://github.com/JohnEarnest). Its small digits are identical to
     /// SUPER-CHIP's, but the big digits are a bigger version of the small ones, rather than
