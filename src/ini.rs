@@ -394,6 +394,7 @@ pub(crate) enum OctoFontIni {
     Eti660,
     Schip,
     Fish,
+    AKouZ1,
 }
 
 impl From<crate::OctoFont> for OctoFontIni {
@@ -405,6 +406,7 @@ impl From<crate::OctoFont> for OctoFontIni {
             crate::OctoFont::Eti660 => Self::Eti660,
             crate::OctoFont::Schip => Self::Schip,
             crate::OctoFont::Fish => Self::Fish,
+            crate::OctoFont::AKouZ1 => Self::AKouZ1,
         }
     }
 }
@@ -418,6 +420,7 @@ impl From<crate::OctoFontIni> for OctoFont {
             crate::OctoFontIni::Eti660 => Self::Eti660,
             crate::OctoFontIni::Schip => Self::Schip,
             crate::OctoFontIni::Fish => Self::Fish,
+            crate::OctoFontIni::AKouZ1 => Self::AKouZ1,
         }
     }
 }
