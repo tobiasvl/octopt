@@ -64,6 +64,31 @@ impl Default for Colors {
     }
 }
 
+/// Represents different CHIP-8 "platforms". In this context, a platform is some CHIP-8 specification
+/// which has its own set of [Options]. This includes, but is not limited to, actual target hardware
+/// systems that run CHIP-8, specific CHIP-8 interpreters with their own quirks, extensions to the
+/// CHIP-8 language, etc.
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[non_exhaustive]
+pub enum Platform {
+    /// The [Octo](https://JohnEarnest.github.io/Octo) interpreter. Corresponds to its "Octo"
+    /// compatibility profile.
+    Octo,
+    /// The original CHIP-8 interpreter implemented on the COSMAC VIP computer.
+    Vip,
+    /// The CHIPOS/CHIP-8 interpreter implemented on the DREAM-6800 computer.
+    Dream6800,
+    /// The CHIP-8 interpreter implemented on the ETI-660 computer.
+    Eti660,
+    /// The CHIP-48 interpreter, which was implemented on the HP 48S calculator.
+    Chip48,
+    /// The SUPER-CHIP interpreter, which was implemented on the HP 48S calculator.
+    Schip,
+    /// The XO-CHIP specification, which was implemented in the Octo interpreter.
+    XoChip,
+}
+
 /// Represents the different touch modes supported by [Octo](https://github.com/JohnEarnest/Octo).
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -363,7 +388,7 @@ pub struct Options {
     pub screen_rotation: ScreenRotation,
     /// The font style expected by the game.
     #[serde(default)]
-    pub font_style: Font, // OCTO_FONT_...
+    pub font_style: Font,
     /// The touch controls this game supports.
     #[serde(default)]
     pub touch_input_mode: TouchMode, // OCTO_TOUCH_...
@@ -389,7 +414,7 @@ pub struct Options {
     pub quirks: Quirks,
 }
 
-/// Returns a default where no quirks are enabled, except that the [`LoResDxy0Behavior`] assumed Octo behavior..
+/// Returns a default where no quirks are enabled, except that the [`LoResDxy0Behavior`] assumes Octo behavior.
 impl Default for Options {
     fn default() -> Self {
         Self {
@@ -398,7 +423,7 @@ impl Default for Options {
             screen_rotation: ScreenRotation::default(),
             font_style: Font::default(),
             touch_input_mode: TouchMode::default(),
-            start_address: Some(512),
+            start_address: Some(0x200),
             colors: Colors::default(),
             quirks: Quirks::default(),
         }
@@ -447,12 +472,153 @@ impl Options {
 
     /// Deserializes Options from an INI string.
     pub fn from_ini(s: &str) -> Result<Self, serde_ini::de::Error> {
-        Ok(Options::from(OptionsIni::from_str(s)?))
+        Ok(Self::from(OptionsIni::from_str(s)?))
     }
 
     /// Serializes Options to an INI string.
-    pub fn to_ini(o: Options) -> String {
+    pub fn to_ini(o: Self) -> String {
         OptionsIni::to_string(&OptionsIni::from(o))
+    }
+
+    /// Get a preset set of Options based on a target Platform.
+    pub fn new(platform: Platform) -> Self {
+        match platform {
+            Platform::Octo => Self::default(),
+            Platform::XoChip => Options {
+                max_size: Some(65024),
+                ..Self::default()
+            },
+            Platform::Vip => Self {
+                tickrate: Some(20),
+                max_size: Some(3216),
+                screen_rotation: ScreenRotation::Normal,
+                font_style: Font::Vip,
+                touch_input_mode: TouchMode::None,
+                start_address: Some(0x200),
+                colors: Colors::default(),
+                quirks: Quirks {
+                    shift: Some(false),
+                    load_store: Some(false),
+                    jump0: Some(false),
+                    logic: Some(true),
+                    clip: Some(true),
+                    vblank: Some(true),
+                    vf_order: Some(true),
+                    delay_wrap: Some(false),
+                    overflow_i: Some(false),
+                    lores_dxy0: Some(LoResDxy0Behavior::NoOp),
+                    // The following are all None, as CHIP-8 on the VIP doesn't support high resolution:
+                    hires_collision: None,
+                    clip_collision: None,
+                    scroll: None,
+                    res_clear: None,
+                },
+            },
+            Platform::Dream6800 => Self {
+                tickrate: Some(20),
+                max_size: Some(3216), // TODO check this
+                screen_rotation: ScreenRotation::Normal,
+                font_style: Font::Dream6800,
+                touch_input_mode: TouchMode::None,
+                start_address: Some(0x200),
+                colors: Colors::default(),
+                quirks: Quirks {
+                    shift: Some(false),
+                    load_store: Some(false),
+                    jump0: Some(false),
+                    logic: Some(true),
+                    clip: Some(true),
+                    vblank: Some(true),
+                    vf_order: Some(true),
+                    delay_wrap: Some(true),
+                    overflow_i: Some(false),
+                    lores_dxy0: Some(LoResDxy0Behavior::TallSprite),
+                    // The following are all None, as CHIP-8 on the VIP doesn't support high resolution:
+                    hires_collision: None,
+                    clip_collision: None,
+                    scroll: None,
+                    res_clear: None,
+                },
+            },
+            Platform::Eti660 => Self {
+                tickrate: Some(20),
+                max_size: Some(3216), // TODO check this
+                screen_rotation: ScreenRotation::Normal,
+                font_style: Font::Eti660,
+                touch_input_mode: TouchMode::None,
+                start_address: Some(0x600),
+                colors: Colors::default(),
+                quirks: Quirks {
+                    // TODO check these
+                    shift: Some(false),
+                    load_store: Some(false),
+                    jump0: Some(false),
+                    logic: Some(true),
+                    clip: Some(true),
+                    vblank: Some(true),
+                    vf_order: Some(true),
+                    delay_wrap: Some(false),
+                    overflow_i: Some(false),
+                    lores_dxy0: Some(LoResDxy0Behavior::NoOp),
+                    // The following are all None, as CHIP-8 on the VIP doesn't support high resolution:
+                    hires_collision: None,
+                    clip_collision: None,
+                    scroll: None,
+                    res_clear: None,
+                },
+            },
+            Platform::Chip48 => Self {
+                tickrate: Some(40),
+                max_size: Some(3583), // TODO check this
+                screen_rotation: ScreenRotation::Normal,
+                font_style: Font::Schip, // TODO check this
+                touch_input_mode: TouchMode::None,
+                start_address: Some(0x200),
+                colors: Colors::default(), // TODO LCD
+                quirks: Quirks {
+                    // TODO check these
+                    shift: Some(true),
+                    load_store: Some(true),
+                    jump0: Some(true),
+                    logic: Some(false),
+                    clip: Some(true),
+                    vblank: Some(false),
+                    vf_order: None,
+                    delay_wrap: Some(false),
+                    overflow_i: Some(false),
+                    lores_dxy0: Some(LoResDxy0Behavior::TallSprite), // TODO check this
+                    res_clear: None,
+                    hires_collision: None,
+                    clip_collision: None,
+                    scroll: None,
+                },
+            },
+            Platform::Schip => Self {
+                tickrate: Some(40),
+                max_size: Some(3583),
+                screen_rotation: ScreenRotation::Normal,
+                font_style: Font::Schip,
+                touch_input_mode: TouchMode::None,
+                start_address: Some(0x200),
+                colors: Colors::default(), // TODO LCD
+                quirks: Quirks {
+                    shift: Some(true),
+                    load_store: Some(true),
+                    jump0: Some(true),
+                    logic: Some(false),
+                    clip: Some(true),
+                    vblank: Some(false),
+                    vf_order: None, // TODO check this
+                    res_clear: Some(false),
+                    delay_wrap: Some(false),
+                    overflow_i: Some(false),
+                    lores_dxy0: Some(LoResDxy0Behavior::TallSprite),
+                    hires_collision: Some(true),
+                    clip_collision: Some(true),
+                    scroll: Some(true),
+                },
+            },
+        }
     }
 }
 
