@@ -82,3 +82,9 @@ fn octo_rc_serialize() {
     let ini_defaults_deserialized = Options::to_ini(deserialized_defaults);
     assert_eq!(ini_defaults, ini_defaults_deserialized);
 }
+
+#[test]
+fn octo_get_font_data() {
+    let octo_defaults = Options::default();
+    get_font_data(&octo_defaults.font_style);
+}

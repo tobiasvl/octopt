@@ -734,7 +734,7 @@ impl Default for Font {
 /// A modern CHIP-8 interpreter will put its font data (for one font) somewhere in the first 512 bytes of
 /// memory, which are reserved for the interpreter, but the actual memory location doesn't matter.
 /// It's common to put it at either address 0 or 80 (`0x50`).
-pub fn get_font_data(font: Font) -> ([u8; 5 * 16], Option<Vec<u8>>) {
+pub fn get_font_data(font: &Font) -> ([u8; 5 * 16], Option<Vec<u8>>) {
     match font {
         Font::Octo => (
             [
