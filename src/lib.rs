@@ -14,7 +14,7 @@ mod ini;
 use ini::OptionsIni;
 use serde::de::{self, Deserializer, Unexpected};
 use serde::{Deserialize, Serialize};
-use serde_repr::*;
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::skip_serializing_none;
 use std::fmt;
 use std::str::FromStr;
@@ -436,7 +436,7 @@ impl Default for Options {
 #[derive(Serialize_repr, Deserialize_repr, PartialEq, Debug)]
 #[repr(u16)]
 pub enum ScreenRotation {
-    /// Normal landscape screen display, used by 99.9999% CHIP-8 games
+    /// Normal landscape screen display, used by 99.9999% of CHIP-8 games
     Normal = 0,
     /// Portrait screen display, ie. a normal screen rotated 90 degrees clockwise
     ClockWise = 90,
@@ -454,7 +454,7 @@ impl Default for ScreenRotation {
 
 /// Deserializes Options from a JSON string.
 ///
-/// This format is used by Octo in OctoCarts and HTML exports, as well as the Chip-8 Archive.
+/// This format is used by Octo in Octocarts and HTML exports, as well as the Chip-8 Archive.
 impl FromStr for Options {
     type Err = serde_json::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -471,13 +471,17 @@ impl Options {
     //}
 
     /// Deserializes Options from an INI string.
+    ///
+    /// # Errors
+    ///
+    /// Returns an `Err` if deserialization from the INI failed.
     pub fn from_ini(s: &str) -> Result<Self, serde_ini::de::Error> {
         Ok(Self::from(OptionsIni::from_str(s)?))
     }
 
     /// Serializes Options to an INI string.
-    pub fn to_ini(o: Self) -> String {
-        OptionsIni::to_string(&OptionsIni::from(o))
+    pub fn to_ini(self) -> String {
+        OptionsIni::to_string(&OptionsIni::from(self))
     }
 
     /// Get a preset set of Options based on a target Platform.
@@ -624,7 +628,7 @@ impl Options {
 
 /// Serializes Options into a JSON string.
 ///
-/// This format is used by Octo in OctoCarts and HTML exports, as well as the Chip-8 Archive.
+/// This format is used by Octo in Octocarts and HTML exports, as well as the Chip-8 Archive.
 impl fmt::Display for Options {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match serde_json::to_string(self) {
@@ -673,7 +677,7 @@ where
         BoolOrU8::U8(1) => Ok(Some(true)),
         BoolOrU8::U8(0) => Ok(Some(false)),
         BoolOrU8::U8(other) => Err(de::Error::invalid_value(
-            Unexpected::Unsigned(other as u64),
+            Unexpected::Unsigned(u64::from(other)),
             &"zero or one",
         )),
     }

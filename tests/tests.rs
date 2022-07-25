@@ -1,8 +1,8 @@
 #[cfg(test)]
-use assert_json_diff::*;
-use octopt::*;
-use reqwest::*;
-use serde_json::*;
+use assert_json_diff::assert_json_eq;
+use octopt::{get_font_data, Options};
+use reqwest::blocking;
+use serde_json::{json, Value};
 
 /// Deserializes the options set by Octo for a new game.
 #[test]
@@ -59,7 +59,7 @@ fn octo_rc_deserialize_default() {
         .unwrap()
         .text()
         .unwrap();
-    let _ = Options::from_ini(&body);
+    let _octopt = Options::from_ini(&body);
 }
 
 #[test]

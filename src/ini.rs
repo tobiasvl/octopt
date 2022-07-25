@@ -1,5 +1,5 @@
 use crate::color::Color;
-use crate::*;
+use crate::{u8, Colors, Font, LoResDxy0Behavior, Options, Quirks, ScreenRotation, TouchMode};
 use serde::de::{self, Deserializer, Unexpected};
 use serde::{Deserialize, Serialize, Serializer};
 use serde_repr::{Deserialize_repr, Serialize_repr};
@@ -364,7 +364,7 @@ impl From<ScreenRotationIni> for ScreenRotation {
 
 /// Deserializes Options from a JSON string.
 ///
-/// This format is used by Octo in OctoCarts and HTML exports, as well as the Chip-8 Archive.
+/// This format is used by Octo in Octocarts and HTML exports, as well as the Chip-8 Archive.
 impl FromStr for OptionsIni {
     type Err = serde_ini::de::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -374,7 +374,7 @@ impl FromStr for OptionsIni {
 
 /// Serializes Options into a JSON string.
 ///
-/// This format is used by Octo in OctoCarts and HTML exports, as well as the Chip-8 Archive.
+/// This format is used by Octo in Octocarts and HTML exports, as well as the Chip-8 Archive.
 impl fmt::Display for OptionsIni {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match serde_ini::to_string(self) {
@@ -443,7 +443,7 @@ where
         1 => Ok(Some(true)),
         0 => Ok(Some(false)),
         other => Err(de::Error::invalid_value(
-            Unexpected::Unsigned(other as u64),
+            Unexpected::Unsigned(u64::from(other)),
             &"zero or one",
         )),
     }
