@@ -2,7 +2,7 @@ octopt
 ======
 [![crates.io](https://img.shields.io/crates/v/octopt.svg)](https://crates.io/crates/octopt)
 [![docs.rs](https://img.shields.io/docsrs/octopt.svg)](https://docs.rs/octopt)
-[![dependency status](https://deps.rs/crate/octopt/0.0.8/status.svg)](https://deps.rs/crate/octopt/)
+[![dependency status](https://deps.rs/repo/github/tobiasvl/octopt/status.svg)](https://deps.rs/crate/octopt)
 
 `octopt` is a library for handling CHIP-8 configuration settings.
 
