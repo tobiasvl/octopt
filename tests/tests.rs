@@ -1,6 +1,8 @@
+#![allow(clippy::unwrap_used)]
+
 #[cfg(test)]
 use assert_json_diff::assert_json_eq;
-use octopt::{get_font_data, Options};
+use octopt::{Font, Options, Platform};
 use reqwest::blocking;
 use serde_json::{json, Value};
 
@@ -29,14 +31,6 @@ fn default_octo_options_bool() {
     assert_json_eq!(octo_defaults_bool, deserialized_defaults);
 }
 
-/// Deserializes the empty option set
-#[test]
-fn empty_options() {
-    let empty = json!({});
-    let deserialized_empty: Options = empty.to_string().parse().unwrap();
-    println!("{}", deserialized_empty);
-}
-
 /// Downloads the CHIP-8 Community Archive programs.json and tries to parse every single one
 #[test]
 fn chip8_archive() {
@@ -55,11 +49,15 @@ fn chip8_archive() {
 /// Downloads the default .octo.rc from the C-Octo repo and parses it
 #[test]
 fn octo_rc_deserialize_default() {
-    let body = blocking::get("https://raw.githubusercontent.com/JohnEarnest/c-octo/main/octo.rc")
-        .unwrap()
-        .text()
-        .unwrap();
-    let _octopt = Options::from_ini(&body);
+    let octopt = json!({"tickrate":500,"maxSize":65024,"screenRotation":0,"fontStyle":"octo","touchInputMode":"none","shiftQuirks":false,"loadStoreQuirks":false,"jumpQuirks":false,"logicQuirks":false,"clipQuirks":false,"vBlankQuirks":false});
+    let deserialized_octopt: Options = octopt.to_string().parse().unwrap();
+    let ini_github =
+        blocking::get("https://raw.githubusercontent.com/JohnEarnest/c-octo/main/octo.rc")
+            .unwrap()
+            .text()
+            .unwrap();
+    let deserialized_ini_github = Options::from_ini(&ini_github).unwrap();
+    assert_json_eq!(deserialized_octopt, deserialized_ini_github);
 }
 
 #[test]
@@ -86,5 +84,5 @@ fn octo_rc_serialize() {
 #[test]
 fn octo_get_font_data() {
     let octo_defaults = Options::default();
-    get_font_data(&octo_defaults.font_style);
+    Font::get_font_data(&octo_defaults.font_style);
 }

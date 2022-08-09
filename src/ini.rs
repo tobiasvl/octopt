@@ -385,14 +385,20 @@ impl fmt::Display for OptionsIni {
 }
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
 pub(crate) enum FontIni {
+    #[serde(rename = "octo")]
     Octo,
+    #[serde(rename = "vip")]
     Vip,
+    #[serde(rename = "dream_6800")]
     Dream6800,
+    #[serde(rename = "eti_660")]
     Eti660,
+    #[serde(rename = "schip")]
     Schip,
+    #[serde(rename = "fish")]
     Fish,
+    #[serde(rename = "akouz1")]
     AKouZ1,
 }
 
