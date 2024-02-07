@@ -11,7 +11,6 @@
 pub mod color;
 use color::Color;
 mod ini;
-use clap::ArgEnum;
 use ini::OptionsIni;
 use parse_display::{Display, FromStr};
 use serde::de::{self, Deserializer, Unexpected};
@@ -70,7 +69,7 @@ impl Default for Colors {
 /// which has its own set of [Options]. This includes, but is not limited to, actual target hardware
 /// systems that run CHIP-8, specific CHIP-8 interpreters with their own quirks, extensions to the
 /// CHIP-8 language, etc.
-#[derive(Display, FromStr, Debug, PartialEq, Serialize, Deserialize, Copy, Clone, ArgEnum)]
+#[derive(Display, FromStr, Debug, PartialEq, Serialize, Deserialize, Copy, Clone)]
 #[serde(rename_all = "lowercase")]
 #[display(style = "lowercase")]
 #[non_exhaustive]
